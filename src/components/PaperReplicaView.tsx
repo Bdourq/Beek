@@ -1062,58 +1062,79 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                 </div>
               </div>
 
-              {/* جدول العُهد (3 أسطر: له وعليه) */}
-              <div className="border-2 border-slate-700 rounded-lg p-2 bg-slate-50/70">
-                <div className="flex items-center justify-between font-black text-xs bg-slate-800 text-white px-2 py-0.5 rounded mb-1">
-                  <span>جدول العُهد (3 أسطر)</span>
-                  <span className="text-[10px] text-yellow-300">له / عليه</span>
+              {/* جدول العُهد */}
+              <div className="border border-slate-700 rounded-lg p-0 bg-white overflow-hidden shadow-2xs">
+                <div className="flex items-center justify-between font-black text-xs bg-slate-800 text-white px-2 py-1">
+                  <span>جدول العُهد</span>
                 </div>
-                <div className="space-y-1.5 text-xs">
-                  {(report.custodyClaims || [
-                    { id: 'cust_1', person: 'عهدة 1', forThem: 0, onThem: 0, notes: '' },
-                    { id: 'cust_2', person: 'عهدة 2', forThem: 0, onThem: 0, notes: '' },
-                    { id: 'cust_3', person: 'عهدة 3', forThem: 0, onThem: 0, notes: '' },
-                    { id: 'cust_4', person: 'عهدة 4', forThem: 0, onThem: 0, notes: '' }
-                  ]).slice(0, 4).map((item, idx) => (
-                    <div key={item.id || idx} className="p-1 bg-white rounded border border-slate-300 space-y-0.5">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-[10px] font-bold text-slate-500 font-mono">{idx + 1}.</span>
-                        <input
-                          type="text"
-                          value={item.person}
-                          placeholder={`صاحب العهدة ${idx + 1}`}
-                          onChange={(e) => updateCustodyClaim(item.id, 'person', e.target.value)}
-                          className="w-full text-[11px] font-bold text-slate-900 bg-transparent"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-1 text-[10px]">
-                        <div className="flex items-center gap-0.5 bg-emerald-50 p-0.5 rounded border border-emerald-200">
-                          <span className="font-bold text-emerald-800 shrink-0 text-[9px]">له:</span>
-                          <input
-                            type="number" inputMode="decimal"
-                            step="0.5"
-                            value={item.forThem === 0 ? '' : item.forThem}
-                            placeholder="0"
-                            title="له: هو يريد من الكاش"
-                            onChange={(e) => updateCustodyClaim(item.id, 'forThem', parseFloat(e.target.value) || 0)}
-                            className="w-full text-center font-mono font-bold text-emerald-950 bg-white rounded text-[10px]"
-                          />
-                        </div>
-                        <div className="flex items-center gap-0.5 bg-rose-50 p-0.5 rounded border border-rose-200">
-                          <span className="font-bold text-rose-800 shrink-0 text-[9px]">عليه:</span>
-                          <input
-                            type="number" inputMode="decimal"
-                            step="0.5"
-                            value={item.onThem === 0 ? '' : item.onThem}
-                            placeholder="0"
-                            title="عليه: الكاش يريد منه"
-                            onChange={(e) => updateCustodyClaim(item.id, 'onThem', parseFloat(e.target.value) || 0)}
-                            className="w-full text-center font-mono font-bold text-rose-950 bg-white rounded text-[10px]"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-center text-xs">
+                    <thead className="bg-slate-100 border-b border-slate-300 text-[10px]">
+                      <tr>
+                        <th className="py-1 border-l border-slate-300 w-8">م</th>
+                        <th className="py-1 border-l border-slate-300 min-w-[70px]">البيان</th>
+                        <th className="py-1 border-l border-slate-300 w-16">له</th>
+                        <th className="py-1 border-l border-slate-300 w-16">عليه</th>
+                        <th className="py-1 min-w-[60px]">ملاحظات</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {(report.custodyClaims || [
+                        { id: 'cust_1', person: '', forThem: 0, onThem: 0, notes: '' },
+                        { id: 'cust_2', person: '', forThem: 0, onThem: 0, notes: '' },
+                        { id: 'cust_3', person: '', forThem: 0, onThem: 0, notes: '' },
+                        { id: 'cust_4', person: '', forThem: 0, onThem: 0, notes: '' }
+                      ]).slice(0, 4).map((item, idx) => (
+                        <tr key={item.id || idx} className="hover:bg-slate-50 transition-colors">
+                          <td className="py-0.5 border-l border-slate-200 text-[10px] text-slate-500 font-mono bg-slate-50">
+                            {idx + 1}
+                          </td>
+                          <td className="p-0 border-l border-slate-200">
+                            <input
+                              type="text"
+                              value={item.person || ''}
+                              placeholder="البيان"
+                              onKeyDown={handleKeyDownNavigation}
+                              onChange={(e) => updateCustodyClaim(item.id, 'person', e.target.value)}
+                              className="w-full h-full min-h-[28px] px-1 text-[11px] font-bold text-slate-900 bg-transparent focus:bg-yellow-50 outline-none"
+                            />
+                          </td>
+                          <td className="p-0 border-l border-slate-200 bg-emerald-50/40">
+                            <input
+                              type="number" inputMode="decimal"
+                              step="0.5"
+                              value={item.forThem === 0 ? '' : item.forThem}
+                              placeholder="0"
+                              onKeyDown={handleKeyDownNavigation}
+                              onChange={(e) => updateCustodyClaim(item.id, 'forThem', parseFloat(e.target.value) || 0)}
+                              className="w-full h-full min-h-[28px] text-center font-mono font-bold text-emerald-950 bg-transparent focus:bg-yellow-50 outline-none"
+                            />
+                          </td>
+                          <td className="p-0 border-l border-slate-200 bg-rose-50/40">
+                            <input
+                              type="number" inputMode="decimal"
+                              step="0.5"
+                              value={item.onThem === 0 ? '' : item.onThem}
+                              placeholder="0"
+                              onKeyDown={handleKeyDownNavigation}
+                              onChange={(e) => updateCustodyClaim(item.id, 'onThem', parseFloat(e.target.value) || 0)}
+                              className="w-full h-full min-h-[28px] text-center font-mono font-bold text-rose-950 bg-transparent focus:bg-yellow-50 outline-none"
+                            />
+                          </td>
+                          <td className="p-0">
+                            <input
+                              type="text"
+                              value={item.notes || ''}
+                              placeholder="ملاحظات"
+                              onKeyDown={handleKeyDownNavigation}
+                              onChange={(e) => updateCustodyClaim(item.id, 'notes', e.target.value)}
+                              className="w-full h-full min-h-[28px] px-1 text-[10px] text-slate-600 bg-transparent focus:bg-yellow-50 outline-none"
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>

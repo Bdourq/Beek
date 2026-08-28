@@ -272,21 +272,18 @@ export const UnifiedReportView: React.FC<UnifiedReportViewProps> = ({ report, su
           </div>
         </div>
 
-        {/* Custody Table (3 Rows - له وعليه) */}
+        {/* Custody Table */}
         <div className="mt-6 border border-slate-300 rounded-lg overflow-hidden">
           <div className="bg-slate-800 text-white px-4 py-2 font-black text-xs flex items-center justify-between">
-            <span>جدول العُهد (3 أسطر - له وعليه)</span>
-            <span className="text-[11px] font-normal text-slate-300">
-              له: هو يريد من الكاش | عليه: الكاش يريد منه
-            </span>
+            <span>جدول العُهد</span>
           </div>
           <table className="w-full text-xs text-right">
             <thead>
               <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-300">
                 <th className="p-2 w-10 text-center">م</th>
-                <th className="p-2">الاسم / صاحب العهدة</th>
-                <th className="p-2 text-center w-28 bg-emerald-50 text-emerald-950">له (يريد من الكاش)</th>
-                <th className="p-2 text-center w-28 bg-rose-50 text-rose-950">عليه (الكاش يريد منه)</th>
+                <th className="p-2">البيان</th>
+                <th className="p-2 text-center w-28 bg-emerald-50 text-emerald-950">له</th>
+                <th className="p-2 text-center w-28 bg-rose-50 text-rose-950">عليه</th>
                 <th className="p-2">ملاحظات</th>
               </tr>
             </thead>

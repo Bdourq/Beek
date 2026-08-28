@@ -265,7 +265,7 @@ export const PrintPaperReplica: React.FC<PrintPaperReplicaProps> = ({ report, su
           <thead>
             <tr className="bg-[#f8f9fa]">
               <th className="py-2.5 px-4 border border-[#dee2e6] text-[#1e3a5f] font-bold w-12">م</th>
-              <th className="py-2.5 px-4 border border-[#dee2e6] text-[#1e3a5f] font-bold text-right">البيان (صاحب العهدة)</th>
+              <th className="py-2.5 px-4 border border-[#dee2e6] text-[#1e3a5f] font-bold text-right">البيان</th>
               <th className="py-2.5 px-4 border border-[#dee2e6] text-[#1e3a5f] font-bold w-32">له</th>
               <th className="py-2.5 px-4 border border-[#dee2e6] text-[#1e3a5f] font-bold w-32">عليه</th>
               <th className="py-2.5 px-4 border border-[#dee2e6] text-[#1e3a5f] font-bold">ملاحظات</th>

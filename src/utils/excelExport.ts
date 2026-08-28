@@ -260,7 +260,7 @@ export const exportDailyReportToExcel = async (report: DailyReport) => {
   applyStyle(worksheet.getCell(`A${sec4Row.number}`), true, 'right', undefined, false);
   worksheet.getCell(`A${sec4Row.number}`).font = { size: 14, bold: true, color: { argb: 'FF1E3A5F' } };
 
-  const sec4Headers = worksheet.addRow(['م', 'البيان (صاحب العهدة)', 'له', 'عليه', 'ملاحظات', '']);
+  const sec4Headers = worksheet.addRow(['م', 'البيان', 'له', 'عليه', 'ملاحظات', '']);
   worksheet.mergeCells(`E${sec4Headers.number}:F${sec4Headers.number}`);
   ['A', 'B', 'C', 'D', 'E'].forEach(col => applyStyle(sec4Headers.getCell(col), true, 'center', 'FFF8F9FA'));
 
