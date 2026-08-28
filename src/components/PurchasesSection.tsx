@@ -98,7 +98,7 @@ export const PurchasesSection: React.FC<PurchasesSectionProps> = ({ purchases, o
           className="flex-1 min-w-[200px] px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 bg-white"
         />
         <input
-          type="number"
+          type="number" inputMode="decimal"
           step="0.01"
           placeholder="المبلغ (د.أ)"
           value={newItemAmount}
@@ -137,7 +137,7 @@ export const PurchasesSection: React.FC<PurchasesSectionProps> = ({ purchases, o
 
             <div className="flex items-center gap-1.5 shrink-0">
               <input
-                type="number"
+                type="number" inputMode="decimal"
                 step="0.01"
                 min="0"
                 value={item.amount === 0 ? '' : item.amount}

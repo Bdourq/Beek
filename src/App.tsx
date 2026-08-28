@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { DailyReport, EmployeeRecord } from './types';
 import { calculateDailySummary } from './utils/calculations';
 import { exportDailyReportToExcel } from './utils/excelExport';
@@ -58,23 +58,34 @@ export function App() {
     }
   }, []);
 
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Update handler for current report
-  const handleUpdateReport = (updatedFields: Partial<DailyReport>) => {
-    if (!currentReport) return;
-    const updated: DailyReport = {
-      ...currentReport,
-      ...updatedFields,
-      updatedAt: new Date().toISOString()
-    };
+  const handleUpdateReport = useCallback((updatedFields: Partial<DailyReport>) => {
+    setCurrentReport(prev => {
+      if (!prev) return prev;
+      const updated: DailyReport = {
+        ...prev,
+        ...updatedFields,
+        updatedAt: new Date().toISOString()
+      };
+      
+      // Update in state list
+      setReports((prevList) =>
+        prevList.map((r) => (r.id === updated.id ? updated : r))
+      );
 
-    setCurrentReport(updated);
-    saveReportLocally(updated);
+      // Debounce heavy localStorage writing
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      saveTimeoutRef.current = setTimeout(() => {
+        saveReportLocally(updated);
+      }, 500);
 
-    // Update in state list
-    setReports((prev) =>
-      prev.map((r) => (r.id === updated.id ? updated : r))
-    );
-  };
+      return updated;
+    });
+  }, []);
 
   // Switch to a new empty report
   const handleNewReport = () => {

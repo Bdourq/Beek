@@ -310,7 +310,7 @@ export const EmployeesSection: React.FC<EmployeesSectionProps> = ({ employees, o
             <Calculator className="w-4 h-4 text-amber-600" />
             <span className="text-xs font-bold text-slate-800">أجر الساعة الافتراضي للمياومة:</span>
             <input
-              type="number"
+              type="number" inputMode="decimal"
               step="0.25"
               min="0.5"
               value={defaultHourlyRate}
@@ -539,7 +539,7 @@ export const EmployeesSection: React.FC<EmployeesSectionProps> = ({ employees, o
                       {isDaily ? (
                         <div className="flex items-center justify-center gap-1">
                           <input
-                            type="number"
+                            type="number" inputMode="decimal"
                             step="0.1"
                             min="0"
                             value={emp.hourlyRate !== undefined ? emp.hourlyRate : defaultHourlyRate}
@@ -629,7 +629,7 @@ export const EmployeesSection: React.FC<EmployeesSectionProps> = ({ employees, o
                     <td className="py-2 px-1 text-center bg-rose-50/30">
                       <div className="flex items-center justify-center gap-1">
                         <input
-                          type="number"
+                          type="number" inputMode="decimal"
                           step="0.5"
                           min="0"
                           value={emp.advance === 0 ? '' : emp.advance}

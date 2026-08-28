@@ -1,1 +1,26 @@
 @import "tailwindcss";
+
+@layer base {
+  @media (max-width: 640px) {
+    /* Improve all inputs and selects for mobile interaction */
+    input[type="text"],
+    input[type="number"],
+    input[type="tel"],
+    select {
+      font-size: 16px !important;
+      min-height: 40px !important;
+      padding: 0.5rem !important;
+      border-radius: 6px !important;
+    }
+    
+    /* Give slightly more breathing room in compact tables */
+    td {
+      padding-top: 0.5rem !important;
+      padding-bottom: 0.5rem !important;
+    }
+
+    button {
+      min-height: 40px !important;
+    }
+  }
+}

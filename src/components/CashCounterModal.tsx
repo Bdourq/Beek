@@ -179,7 +179,7 @@ export const CashCounterModal: React.FC<CashCounterModalProps> = ({
                         +5
                       </button>
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         min="0"
                         value={count === 0 ? '' : count}
                         placeholder="0"
@@ -237,7 +237,7 @@ export const CashCounterModal: React.FC<CashCounterModalProps> = ({
                         +5
                       </button>
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         min="0"
                         value={count === 0 ? '' : count}
                         placeholder="0"

@@ -260,7 +260,7 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
                     <td className="p-3 font-bold text-slate-800 text-sm">النقد الافتتاحي</td>
                     <td className="p-2 w-44">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.5"
                         value={report.openingCash === 0 ? '' : report.openingCash}
                         placeholder="0.00"
@@ -275,7 +275,7 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
                     <td className="p-3 font-bold text-slate-800 text-sm">اضافة ذمم</td>
                     <td className="p-2 w-44">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.5"
                         value={summary.totalVendorDebtsAdded === 0 ? '' : summary.totalVendorDebtsAdded}
                         placeholder="0.00"
@@ -290,7 +290,7 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
                     <td className="p-3 font-bold text-slate-800 text-sm">مبيعات</td>
                     <td className="p-2 w-44">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.5"
                         value={report.sales === 0 ? '' : report.sales}
                         placeholder="0.00"
@@ -305,7 +305,7 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
                     <td className="p-3 font-bold text-slate-800 text-sm">مبيعات أخرى</td>
                     <td className="p-2 w-44">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.5"
                         value={report.otherSales === 0 ? '' : report.otherSales}
                         placeholder="0.00"
@@ -344,7 +344,7 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
                     <td className="p-2.5 font-black text-slate-900 text-xs">نقد (الكاش الفعلي)</td>
                     <td className="p-1.5 w-40">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.1"
                         value={report.actualCashInDrawer === 0 ? '' : report.actualCashInDrawer}
                         placeholder="0.00"
@@ -359,7 +359,7 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
                     <td className="p-2.5 font-black text-slate-900 text-xs">فيزا</td>
                     <td className="p-1.5 w-40">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.01"
                         value={report.visaPOS === 0 ? '' : report.visaPOS}
                         placeholder="0.00"
@@ -374,7 +374,7 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
                     <td className="p-2.5 font-black text-slate-900 text-xs">Rt</td>
                     <td className="p-1.5 w-40">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.01"
                         value={report.rtPOS === 0 ? '' : report.rtPOS}
                         placeholder="0.00"
@@ -389,7 +389,7 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
                     <td className="p-2.5 font-black text-slate-900 text-xs">مايسترو</td>
                     <td className="p-1.5 w-40">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.01"
                         value={report.maestroPOS === 0 ? '' : report.maestroPOS}
                         placeholder="0.00"
@@ -404,7 +404,7 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
                     <td className="p-2.5 font-black text-slate-900 text-xs">فرق سعر</td>
                     <td className="p-1.5 w-40">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.01"
                         value={report.priceDiff === 0 ? '' : report.priceDiff}
                         placeholder="0.00"
@@ -428,7 +428,7 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
                     </td>
                     <td className="p-1.5 w-40">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.5"
                         value={summary.totalAdvances === 0 ? '' : summary.totalAdvances}
                         placeholder="0.00"
@@ -444,7 +444,7 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
                     <td className="p-2.5 font-bold text-slate-800 text-xs">المحفظة</td>
                     <td className="p-1.5 w-40">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.1"
                         value={summary.totalWallet === 0 ? '' : summary.totalWallet}
                         placeholder="0.00"
@@ -468,7 +468,7 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
                     </td>
                     <td className="p-1.5 w-40">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.1"
                         value={summary.totalPurchases === 0 ? '' : summary.totalPurchases}
                         placeholder="0.00"
@@ -483,7 +483,7 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
                     <td className="p-2.5 font-bold text-slate-800 text-xs">سداد ذمم تجار</td>
                     <td className="p-1.5 w-40">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.5"
                         value={summary.totalVendorDebtsPaid === 0 ? '' : summary.totalVendorDebtsPaid}
                         placeholder="0.00"
@@ -498,7 +498,7 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
                     <td className="p-2.5 font-bold text-slate-800 text-xs">مصاريف أخرى</td>
                     <td className="p-1.5 w-40">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.5"
                         value={summary.totalOtherExpenses === 0 ? '' : summary.totalOtherExpenses}
                         placeholder="0.00"
@@ -513,7 +513,7 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
                     <td className="p-2.5 font-bold text-slate-800 text-xs">الشقة</td>
                     <td className="p-1.5 w-40">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.05"
                         value={summary.totalApartmentExpenses === 0 ? '' : summary.totalApartmentExpenses}
                         placeholder="0.00"
@@ -528,7 +528,7 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
                     <td className="p-2.5 font-bold text-slate-800 text-xs">مصاريف إدارية</td>
                     <td className="p-1.5 w-40">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.5"
                         value={summary.totalAdminExpenses === 0 ? '' : summary.totalAdminExpenses}
                         placeholder="0.00"
@@ -543,7 +543,7 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
                     <td className="p-2.5 font-bold text-slate-800 text-xs">يحيى</td>
                     <td className="p-1.5 w-40">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.5"
                         value={summary.totalYahya === 0 ? '' : summary.totalYahya}
                         placeholder="0.00"
@@ -558,7 +558,7 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
                     <td className="p-2.5 font-bold text-slate-800 text-xs">أبو عبدالله</td>
                     <td className="p-1.5 w-40">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.5"
                         value={summary.totalAbuAbdullah === 0 ? '' : summary.totalAbuAbdullah}
                         placeholder="0.00"
@@ -573,7 +573,7 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
                     <td className="p-2.5 font-bold text-slate-800 text-xs">بهارات</td>
                     <td className="p-1.5 w-40">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.5"
                         value={summary.totalSpices === 0 ? '' : summary.totalSpices}
                         placeholder="0.00"
@@ -588,7 +588,7 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
                     <td className="p-2.5 font-bold text-slate-800 text-xs">معدات وصيانة</td>
                     <td className="p-1.5 w-40">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.5"
                         value={summary.totalMaintenance === 0 ? '' : summary.totalMaintenance}
                         placeholder="0.00"

@@ -66,7 +66,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
         clearTimeout(saveTimeoutRef.current);
       }
 
-      saveTimeoutRef.current = setTimeout(() => {
+       
         onUpdateReport(updates);
         setSaveStatus('saved');
         const now = new Date();
@@ -74,7 +74,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
           now.getSeconds()
         ).padStart(2, '0')}`;
         setLastSavedTime(timeStr);
-      }, 250);
+       
     },
     [onUpdateReport]
   );
@@ -409,7 +409,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                 <div className="flex items-center justify-between gap-1">
                   <span className="text-slate-700">النقد الافتتاحي:</span>
                   <input
-                    type="number"
+                    type="number" inputMode="decimal"
                     step="0.5"
                     value={report.openingCash === 0 ? '' : report.openingCash}
                     placeholder="0"
@@ -425,7 +425,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                 <div className="flex items-center justify-between gap-1">
                   <span className="text-slate-700">إضافة ذمم جديدة:</span>
                   <input
-                    type="number"
+                    type="number" inputMode="decimal"
                     step="0.5"
                     value={report.newDebtsTotal === 0 ? '' : report.newDebtsTotal}
                     placeholder="0"
@@ -441,7 +441,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                 <div className="flex items-center justify-between gap-1">
                   <span className="text-slate-700">سداد ذمم قديمة:</span>
                   <input
-                    type="number"
+                    type="number" inputMode="decimal"
                     step="0.5"
                     value={report.oldDebtsPaidTotal === 0 ? '' : report.oldDebtsPaidTotal}
                     placeholder="0"
@@ -461,7 +461,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                 <div className="flex items-center justify-between gap-1">
                   <span className="text-slate-900 font-extrabold">المبيعات:</span>
                   <input
-                    type="number"
+                    type="number" inputMode="decimal"
                     step="1"
                     value={report.sales === 0 ? '' : report.sales}
                     placeholder="0"
@@ -477,7 +477,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                 <div className="flex items-center justify-between gap-1">
                   <span className="text-slate-700">مبيعات أخرى:</span>
                   <input
-                    type="number"
+                    type="number" inputMode="decimal"
                     step="0.5"
                     value={report.otherSales === 0 ? '' : report.otherSales}
                     placeholder="0"
@@ -575,7 +575,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                       </button>
                     </div>
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="0.5"
                       value={report.actualCashInDrawer === 0 ? '' : report.actualCashInDrawer}
                       placeholder="0"
@@ -592,7 +592,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                   <div className="flex items-center justify-between py-0.5">
                     <span className="font-bold text-slate-700">مشتريات:</span>
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="0.01"
                       value={summary.totalPurchases === 0 ? '' : summary.totalPurchases}
                       placeholder="0"
@@ -622,7 +622,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                       </button>
                     </div>
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="0.5"
                       value={summary.totalAdvances === 0 ? '' : summary.totalAdvances}
                       placeholder="0"
@@ -641,7 +641,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                   <div className="flex items-center justify-between py-0.5">
                     <span className="font-bold text-slate-700">سداد تجار:</span>
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="1"
                       value={summary.totalVendorDebtsPaid === 0 ? '' : summary.totalVendorDebtsPaid}
                       placeholder="0"
@@ -660,7 +660,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                   <div className="flex items-center justify-between py-0.5">
                     <span className="font-bold text-slate-700">مصاريف أخرى:</span>
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="0.5"
                       value={summary.totalOtherExpenses === 0 ? '' : summary.totalOtherExpenses}
                       placeholder="0"
@@ -679,7 +679,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                   <div className="flex items-center justify-between py-0.5">
                     <span className="font-bold text-slate-700">الشقة:</span>
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="0.5"
                       value={summary.totalApartmentExpenses === 0 ? '' : summary.totalApartmentExpenses}
                       placeholder="0"
@@ -698,7 +698,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                   <div className="flex items-center justify-between py-0.5">
                     <span className="font-bold text-slate-700">مصاريف إدارية:</span>
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="0.25"
                       value={summary.totalAdminExpenses === 0 ? '' : summary.totalAdminExpenses}
                       placeholder="0"
@@ -717,7 +717,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                   <div className="flex items-center justify-between py-0.5">
                     <span className="font-bold text-slate-700">محفظة:</span>
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="0.01"
                       value={summary.totalWallet === 0 ? '' : summary.totalWallet}
                       placeholder="0"
@@ -736,7 +736,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                   <div className="flex items-center justify-between py-0.5">
                     <span className="font-bold text-slate-700">يحيى:</span>
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="0.5"
                       value={summary.totalYahya === 0 ? '' : summary.totalYahya}
                       placeholder="0"
@@ -755,7 +755,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                   <div className="flex items-center justify-between py-0.5">
                     <span className="font-bold text-slate-700">أبو عبدالله:</span>
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="0.5"
                       value={summary.totalAbuAbdullah === 0 ? '' : summary.totalAbuAbdullah}
                       placeholder="0"
@@ -774,7 +774,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                   <div className="flex items-center justify-between py-0.5">
                     <span className="font-bold text-slate-700">فيزا:</span>
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="0.01"
                       value={report.visaPOS === 0 ? '' : report.visaPOS}
                       placeholder="0"
@@ -793,7 +793,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                       <span className="font-bold text-slate-700">RT (أوردرات ملغاة):</span>
                     </div>
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="0.01"
                       value={report.rtPOS === 0 ? '' : report.rtPOS}
                       placeholder="0"
@@ -810,7 +810,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                   <div className="flex items-center justify-between py-0.5">
                     <span className="font-bold text-slate-700">مايسترو:</span>
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="0.01"
                       value={report.maestroPOS === 0 ? '' : report.maestroPOS}
                       placeholder="0"
@@ -827,7 +827,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                   <div className="flex items-center justify-between py-0.5">
                     <span className="font-bold text-slate-700">فرق سعر:</span>
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="0.01"
                       value={report.priceDiff === 0 ? '' : report.priceDiff}
                       placeholder="0"
@@ -844,7 +844,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                   <div className="flex items-center justify-between py-0.5">
                     <span className="font-bold text-slate-700">صيانة:</span>
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="0.5"
                       value={summary.totalMaintenance === 0 ? '' : summary.totalMaintenance}
                       placeholder="0"
@@ -863,7 +863,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                   <div className="flex items-center justify-between py-0.5">
                     <span className="font-bold text-slate-700">بهارات:</span>
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="0.01"
                       value={summary.totalSpices === 0 ? '' : summary.totalSpices}
                       placeholder="0"
@@ -973,7 +973,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                       </div>
                       <div className="flex items-center gap-0.5">
                         <input
-                          type="number"
+                          type="number" inputMode="decimal"
                           step="0.01"
                           value={item.amount === 0 ? '' : item.amount}
                           placeholder="0"
@@ -1038,7 +1038,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                         className="w-16 bg-transparent text-[11px] font-semibold truncate"
                       />
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.01"
                         value={item.amount === 0 ? '' : item.amount}
                         placeholder="0"
@@ -1090,7 +1090,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                         <div className="flex items-center gap-0.5 bg-emerald-50 p-0.5 rounded border border-emerald-200">
                           <span className="font-bold text-emerald-800 shrink-0 text-[9px]">له:</span>
                           <input
-                            type="number"
+                            type="number" inputMode="decimal"
                             step="0.5"
                             value={item.forThem === 0 ? '' : item.forThem}
                             placeholder="0"
@@ -1102,7 +1102,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                         <div className="flex items-center gap-0.5 bg-rose-50 p-0.5 rounded border border-rose-200">
                           <span className="font-bold text-rose-800 shrink-0 text-[9px]">عليه:</span>
                           <input
-                            type="number"
+                            type="number" inputMode="decimal"
                             step="0.5"
                             value={item.onThem === 0 ? '' : item.onThem}
                             placeholder="0"
@@ -1146,7 +1146,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                         className="w-16 bg-transparent text-[11px] font-semibold"
                       />
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.5"
                         value={item.amount === 0 ? '' : item.amount}
                         placeholder="0"
@@ -1182,7 +1182,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                         className="w-20 bg-transparent text-[11px] font-semibold truncate"
                       />
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.5"
                         value={item.amount === 0 ? '' : item.amount}
                         placeholder="0"
@@ -1220,7 +1220,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                         className="w-20 bg-transparent text-[11px] font-semibold truncate"
                       />
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="1"
                         value={item.amount === 0 ? '' : item.amount}
                         placeholder="0"
@@ -1264,7 +1264,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                         className="w-16 bg-transparent text-[11px] font-semibold"
                       />
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.5"
                         value={item.amount === 0 ? '' : item.amount}
                         placeholder="0"
@@ -1307,7 +1307,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                         className="w-16 bg-transparent text-[11px] font-semibold truncate"
                       />
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.5"
                         value={item.amount === 0 ? '' : item.amount}
                         placeholder="0"
@@ -1347,7 +1347,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                         className="w-16 bg-transparent text-[11px] font-semibold"
                       />
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.05"
                         value={item.amount === 0 ? '' : item.amount}
                         placeholder="0"
@@ -1391,7 +1391,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                         className="w-16 bg-transparent text-[11px] font-semibold truncate"
                       />
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="1"
                         value={item.amount === 0 ? '' : item.amount}
                         placeholder="0"
@@ -1435,7 +1435,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                         className="w-16 bg-transparent text-[11px] font-semibold truncate"
                       />
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="1"
                         value={item.amount === 0 ? '' : item.amount}
                         placeholder="0"
@@ -1479,7 +1479,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                         className="w-16 bg-transparent text-[11px] font-semibold truncate"
                       />
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         step="0.5"
                         value={item.amount === 0 ? '' : item.amount}
                         placeholder="0"
@@ -1508,7 +1508,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
               <div className="bg-white p-1.5 rounded border border-slate-300">
                 <span className="text-[10px] font-bold text-slate-600 block">سيخ 1 (استهلاك رز):</span>
                 <input
-                  type="number"
+                  type="number" inputMode="decimal"
                   value={report.kitchenConsumption.rice1 === 0 ? '' : report.kitchenConsumption.rice1}
                   placeholder="0"
                   onKeyDown={handleKeyDownNavigation}
@@ -1527,7 +1527,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
               <div className="bg-white p-1.5 rounded border border-slate-300">
                 <span className="text-[10px] font-bold text-slate-600 block">سيخ 2 (رز):</span>
                 <input
-                  type="number"
+                  type="number" inputMode="decimal"
                   value={report.kitchenConsumption.rice2 === 0 ? '' : report.kitchenConsumption.rice2}
                   placeholder="0"
                   onKeyDown={handleKeyDownNavigation}
@@ -1546,7 +1546,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
               <div className="bg-white p-1.5 rounded border border-slate-300">
                 <span className="text-[10px] font-bold text-slate-600 block">استهلاك لوز:</span>
                 <input
-                  type="number"
+                  type="number" inputMode="decimal"
                   step="0.1"
                   value={
                     report.kitchenConsumption.almonds === 0
@@ -1570,7 +1570,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
               <div className="bg-white p-1.5 rounded border border-slate-300">
                 <span className="text-[10px] font-bold text-slate-600 block">استهلاك بطاطا:</span>
                 <input
-                  type="number"
+                  type="number" inputMode="decimal"
                   step="0.1"
                   value={
                     report.kitchenConsumption.potatoes === 0
@@ -1594,7 +1594,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
               <div className="bg-white p-1.5 rounded border border-slate-300">
                 <span className="text-[10px] font-bold text-slate-600 block">تزويد:</span>
                 <input
-                  type="number"
+                  type="number" inputMode="decimal"
                   value={
                     report.kitchenConsumption.supplyIn === 0
                       ? ''
@@ -1617,7 +1617,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
               <div className="bg-white p-1.5 rounded border border-slate-300">
                 <span className="text-[10px] font-bold text-slate-600 block">مرتجع:</span>
                 <input
-                  type="number"
+                  type="number" inputMode="decimal"
                   value={
                     report.kitchenConsumption.returns === 0
                       ? ''
@@ -1640,7 +1640,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
               <div className="bg-white p-1.5 rounded border border-slate-300">
                 <span className="text-[10px] font-bold text-slate-600 block">جنات:</span>
                 <input
-                  type="number"
+                  type="number" inputMode="decimal"
                   value={
                     report.kitchenConsumption.jannat === 0
                       ? ''
@@ -1663,7 +1663,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
               <div className="bg-white p-1.5 rounded border border-slate-300">
                 <span className="text-[10px] font-bold text-slate-600 block">قشرة:</span>
                 <input
-                  type="number"
+                  type="number" inputMode="decimal"
                   value={report.kitchenConsumption.peel === 0 ? '' : report.kitchenConsumption.peel}
                   placeholder="0"
                   onKeyDown={handleKeyDownNavigation}
@@ -1699,7 +1699,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                     {report.productionItems.map((p) => (
                       <td key={p.id} className="py-1 px-2">
                         <input
-                          type="number"
+                          type="number" inputMode="decimal"
                           value={p.shift1 === 0 ? '' : p.shift1}
                           placeholder="0"
                           onKeyDown={handleKeyDownNavigation}
@@ -1722,7 +1722,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                     {report.productionItems.map((p) => (
                       <td key={p.id} className="py-1 px-2">
                         <input
-                          type="number"
+                          type="number" inputMode="decimal"
                           value={p.shift2 === 0 ? '' : p.shift2}
                           placeholder="0"
                           onKeyDown={handleKeyDownNavigation}
@@ -1947,7 +1947,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                         <td className="py-1.5 px-1 border-l border-slate-200">
                           {isDaily ? (
                             <input
-                              type="number"
+                              type="number" inputMode="decimal"
                               step="0.1"
                               value={emp.hourlyRate || 1.5}
                               onChange={(e) =>
@@ -2002,7 +2002,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                         <td className="py-1.5 px-2 border-l border-slate-200">
                           <div className="flex items-center justify-center gap-1">
                             <input
-                              type="number"
+                              type="number" inputMode="decimal"
                               step="0.5"
                               value={emp.advance === 0 ? '' : emp.advance}
                               placeholder="-"

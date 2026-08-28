@@ -79,7 +79,7 @@ export const KitchenShiftsSection: React.FC<KitchenShiftsSectionProps> = ({
                     <td className="py-2.5 px-3 font-bold text-slate-900">{item.name}</td>
                     <td className="py-2.5 px-3 text-center">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         min="0"
                         value={item.shift1 === 0 ? '' : item.shift1}
                         placeholder="0"
@@ -95,7 +95,7 @@ export const KitchenShiftsSection: React.FC<KitchenShiftsSectionProps> = ({
                     </td>
                     <td className="py-2.5 px-3 text-center">
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         min="0"
                         value={item.shift2 === 0 ? '' : item.shift2}
                         placeholder="0"
@@ -134,7 +134,7 @@ export const KitchenShiftsSection: React.FC<KitchenShiftsSectionProps> = ({
                 سيخ 1 (استهلاك رز)
               </label>
               <input
-                type="number"
+                type="number" inputMode="decimal"
                 step="0.1"
                 value={kitchenConsumption.rice1 === 0 ? '' : kitchenConsumption.rice1}
                 placeholder="0"
@@ -150,7 +150,7 @@ export const KitchenShiftsSection: React.FC<KitchenShiftsSectionProps> = ({
                 سيخ 2 (استهلاك رز)
               </label>
               <input
-                type="number"
+                type="number" inputMode="decimal"
                 step="0.1"
                 value={kitchenConsumption.rice2 === 0 ? '' : kitchenConsumption.rice2}
                 placeholder="0"
@@ -166,7 +166,7 @@ export const KitchenShiftsSection: React.FC<KitchenShiftsSectionProps> = ({
                 استهلاك لوز
               </label>
               <input
-                type="number"
+                type="number" inputMode="decimal"
                 step="0.05"
                 value={kitchenConsumption.almonds === 0 ? '' : kitchenConsumption.almonds}
                 placeholder="0"
@@ -182,7 +182,7 @@ export const KitchenShiftsSection: React.FC<KitchenShiftsSectionProps> = ({
                 استهلاك بطاطا
               </label>
               <input
-                type="number"
+                type="number" inputMode="decimal"
                 step="0.1"
                 value={kitchenConsumption.potatoes === 0 ? '' : kitchenConsumption.potatoes}
                 placeholder="0"
@@ -198,7 +198,7 @@ export const KitchenShiftsSection: React.FC<KitchenShiftsSectionProps> = ({
                 تزويد
               </label>
               <input
-                type="number"
+                type="number" inputMode="decimal"
                 step="1"
                 value={kitchenConsumption.supplyIn === 0 ? '' : kitchenConsumption.supplyIn}
                 placeholder="0"
@@ -214,7 +214,7 @@ export const KitchenShiftsSection: React.FC<KitchenShiftsSectionProps> = ({
                 مرتجع
               </label>
               <input
-                type="number"
+                type="number" inputMode="decimal"
                 step="1"
                 value={kitchenConsumption.returns === 0 ? '' : kitchenConsumption.returns}
                 placeholder="0"
@@ -230,7 +230,7 @@ export const KitchenShiftsSection: React.FC<KitchenShiftsSectionProps> = ({
                 جنات
               </label>
               <input
-                type="number"
+                type="number" inputMode="decimal"
                 step="1"
                 value={kitchenConsumption.jannat === 0 ? '' : kitchenConsumption.jannat}
                 placeholder="0"
@@ -246,7 +246,7 @@ export const KitchenShiftsSection: React.FC<KitchenShiftsSectionProps> = ({
                 قشرة
               </label>
               <input
-                type="number"
+                type="number" inputMode="decimal"
                 step="1"
                 value={kitchenConsumption.peel === 0 ? '' : kitchenConsumption.peel}
                 placeholder="0"

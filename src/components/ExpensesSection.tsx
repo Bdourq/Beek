@@ -129,7 +129,7 @@ export const ExpensesSection: React.FC<ExpensesSectionProps> = ({ report, onChan
                 />
                 <div className="flex items-center gap-1">
                   <input
-                    type="number"
+                    type="number" inputMode="decimal"
                     step="0.1"
                     min="0"
                     value={item.amount === 0 ? '' : item.amount}
@@ -210,7 +210,7 @@ export const ExpensesSection: React.FC<ExpensesSectionProps> = ({ report, onChan
                   />
                   <div className="flex items-center gap-1">
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="0.05"
                       min="0"
                       value={item.amount === 0 ? '' : item.amount}
@@ -257,7 +257,7 @@ export const ExpensesSection: React.FC<ExpensesSectionProps> = ({ report, onChan
                   />
                   <div className="flex items-center gap-1">
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="0.1"
                       min="0"
                       value={item.amount === 0 ? '' : item.amount}
@@ -325,7 +325,7 @@ export const ExpensesSection: React.FC<ExpensesSectionProps> = ({ report, onChan
                 />
                 <div className="flex items-center gap-1">
                   <input
-                    type="number"
+                    type="number" inputMode="decimal"
                     step="0.5"
                     min="0"
                     value={item.amount === 0 ? '' : item.amount}
@@ -389,7 +389,7 @@ export const ExpensesSection: React.FC<ExpensesSectionProps> = ({ report, onChan
                 />
                 <div className="flex items-center gap-1">
                   <input
-                    type="number"
+                    type="number" inputMode="decimal"
                     step="1"
                     min="0"
                     value={item.amount === 0 ? '' : item.amount}
@@ -460,7 +460,7 @@ export const ExpensesSection: React.FC<ExpensesSectionProps> = ({ report, onChan
                   />
                   <div className="flex items-center gap-1">
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="0.5"
                       min="0"
                       value={item.amount === 0 ? '' : item.amount}
@@ -499,7 +499,7 @@ export const ExpensesSection: React.FC<ExpensesSectionProps> = ({ report, onChan
                   />
                   <div className="flex items-center gap-1">
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       step="0.5"
                       min="0"
                       value={item.amount === 0 ? '' : item.amount}
@@ -560,7 +560,7 @@ export const ExpensesSection: React.FC<ExpensesSectionProps> = ({ report, onChan
                   className="flex-1 text-xs font-bold text-slate-800 bg-transparent focus:outline-none"
                 />
                 <input
-                  type="number"
+                  type="number" inputMode="decimal"
                   placeholder="المبلغ"
                   value={v.amount === 0 ? '' : v.amount}
                   onChange={(e) =>
@@ -614,7 +614,7 @@ export const ExpensesSection: React.FC<ExpensesSectionProps> = ({ report, onChan
                   className="flex-1 text-xs font-bold text-slate-800 bg-transparent focus:outline-none"
                 />
                 <input
-                  type="number"
+                  type="number" inputMode="decimal"
                   placeholder="المبلغ"
                   value={v.amount === 0 ? '' : v.amount}
                   onChange={(e) =>
