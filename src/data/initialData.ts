@@ -144,6 +144,11 @@ export function createEmptyDailyReport(dateStr?: string): DailyReport {
     walletExpenses: [
       { id: 'wal_1', name: 'محفظة', amount: 0 }
     ],
+    custodyClaims: [
+      { id: 'cust_1', person: 'عهدة 1', forThem: 0, onThem: 0, notes: '' },
+      { id: 'cust_2', person: 'عهدة 2', forThem: 0, onThem: 0, notes: '' },
+      { id: 'cust_3', person: 'عهدة 3', forThem: 0, onThem: 0, notes: '' }
+    ],
     otherExpenses: [],
 
     employees: generateDefaultEmployees(),
@@ -313,6 +318,13 @@ export function createSampleDailyReport(): DailyReport {
     // Digital Wallet (56.42 JOD)
     walletExpenses: [
       { id: 'wal_1', name: 'المحفظة', amount: 56.42 }
+    ],
+
+    // Custody & Claims (3 lines: له / عليه)
+    custodyClaims: [
+      { id: 'cust_1', person: 'أبو عمر (عهدة شاورما)', forThem: 25.0, onThem: 0, notes: 'مطلوب له' },
+      { id: 'cust_2', person: 'كاشير الشفت الصباحي', forThem: 0, onThem: 15.0, notes: 'متبقي عليه' },
+      { id: 'cust_3', person: 'عهدة مشتريات طارئة', forThem: 0, onThem: 0, notes: '' }
     ],
 
     // Other Expenses (10.00 JOD)

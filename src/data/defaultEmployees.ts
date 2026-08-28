@@ -32,15 +32,23 @@ export const INITIAL_STAFF_NAMES: string[] = [
 ];
 
 export function generateDefaultEmployees(): EmployeeRecord[] {
-  return INITIAL_STAFF_NAMES.map((name, index) => ({
-    id: `emp_${index + 1}`,
-    number: index + 1,
-    name,
-    advance: 0,
-    transport: 0,
-    signed: false,
-    notes: '',
-    shiftIn: '10:00',
-    shiftOut: '22:00'
-  }));
+  return INITIAL_STAFF_NAMES.map((name, index) => {
+    // First few can be monthly or default daily with 1.5 JD/hour
+    const isMonthly = index < 4; // e.g. supervisors / managers
+    return {
+      id: `emp_${index + 1}`,
+      number: index + 1,
+      name,
+      advance: 0,
+      transport: 0,
+      signed: false,
+      notes: '',
+      shiftIn: '10:00',
+      shiftOut: '22:00',
+      employmentType: isMonthly ? 'monthly' : 'daily',
+      hourlyRate: isMonthly ? 0 : 1.5,
+      hoursWorked: 12,
+      calculatedWage: isMonthly ? 0 : 18.0
+    };
+  });
 }

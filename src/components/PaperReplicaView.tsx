@@ -21,6 +21,7 @@ import {
 import { AlBaikLogo } from './AlBaikLogo';
 import { CashCounterModal } from './CashCounterModal';
 import { QuickCalculator } from './QuickCalculator';
+import { calculateShiftHours, computeHourlyWage } from './EmployeesSection';
 
 interface PaperReplicaViewProps {
   report: DailyReport;
@@ -188,12 +189,46 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
     }
   };
 
-  // Helper for employees update
+  // Helper for employees update with automatic wage calculation
   const updateEmployee = (id: string, field: string, val: any) => {
-    const updated = report.employees.map((emp) =>
-      emp.id === id ? { ...emp, [field]: val } : emp
-    );
+    const updated = report.employees.map((emp) => {
+      if (emp.id === id) {
+        const newEmp = { ...emp, [field]: val };
+        const empType = (field === 'employmentType' ? val : (newEmp.employmentType || 'daily')) as 'daily' | 'monthly';
+        const shiftIn = field === 'shiftIn' ? val : newEmp.shiftIn;
+        const shiftOut = field === 'shiftOut' ? val : newEmp.shiftOut;
+        const rate = (field === 'hourlyRate' ? Number(val) : (Number(newEmp.hourlyRate) || 1.5)) || 0;
+
+        const hours = calculateShiftHours(shiftIn, shiftOut);
+        newEmp.hoursWorked = hours;
+
+        if (empType === 'monthly') {
+          newEmp.calculatedWage = 0;
+          newEmp.hourlyRate = 0;
+        } else {
+          newEmp.hourlyRate = rate > 0 ? rate : 1.5;
+          newEmp.calculatedWage = computeHourlyWage(hours, newEmp.hourlyRate, 'daily');
+        }
+        return newEmp;
+      }
+      return emp;
+    });
     triggerDebouncedUpdate({ employees: updated });
+  };
+
+  // Helper for custody claims update (جدول العهد: له وعليه)
+  const updateCustodyClaim = (
+    id: string,
+    field: 'person' | 'forThem' | 'onThem' | 'notes',
+    val: any
+  ) => {
+    const current = report.custodyClaims || [
+      { id: 'cust_1', person: 'عهدة 1', forThem: 0, onThem: 0, notes: '' },
+      { id: 'cust_2', person: 'عهدة 2', forThem: 0, onThem: 0, notes: '' },
+      { id: 'cust_3', person: 'عهدة 3', forThem: 0, onThem: 0, notes: '' }
+    ];
+    const updated = current.map((c) => (c.id === id ? { ...c, [field]: val } : c));
+    triggerDebouncedUpdate({ custodyClaims: updated });
   };
 
   // Quick set employee advance
@@ -882,7 +917,208 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
             </div>
 
             {/* ======================================================== */}
-            {/* Column 2 (md:col-span-2): يحيى + بهارات + صيانة */}
+            {/* Column 2 (md:col-span-3): مشتريات (Purchases - أول جدول) */}
+            {/* ======================================================== */}
+            <div className="md:col-span-3 border-2 border-orange-300 rounded-lg p-2 bg-orange-50/20 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between font-black text-xs bg-orange-600 text-white px-2 py-1 rounded mb-2">
+                  <span>جدول المشتريات (أول جدول)</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono text-xs">{formatNumber(summary.totalPurchases)}</span>
+                    <button
+                      type="button"
+                      onClick={() => addListItem('purchases', 'مادة')}
+                      className="bg-white text-orange-900 px-1.5 py-0.5 rounded text-[10px] hover:bg-orange-100 font-black cursor-pointer"
+                    >
+                      + سطر جديد
+                    </button>
+                  </div>
+                </div>
+
+                {/* Cashier Quick-Add Preset Chips */}
+                <div className="mb-2 p-1.5 bg-orange-100/70 rounded border border-orange-200">
+                  <span className="text-[10px] font-black text-orange-950 block mb-1">
+                    إضافة سريعة لبنود المشتريات:
+                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {COMMON_PURCHASE_PRESETS.map((preset) => (
+                      <button
+                        key={preset.name}
+                        type="button"
+                        onClick={() => addListItem('purchases', preset.name, preset.amount)}
+                        className="px-1.5 py-0.5 bg-white hover:bg-orange-200 border border-orange-300 text-orange-950 rounded text-[10px] font-bold transition-colors cursor-pointer"
+                      >
+                        +{preset.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-1 max-h-96 overflow-y-auto pr-1 text-xs">
+                  {report.purchases.map((item, idx) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between gap-1 py-0.5 border-b border-slate-100 last:border-0"
+                    >
+                      <div className="flex items-center gap-1 flex-1">
+                        <span className="text-[10px] text-slate-400 font-mono w-4">{idx + 1}</span>
+                        <input
+                          type="text"
+                          value={item.name}
+                          onChange={(e) =>
+                            updateListField('purchases', item.id, 'name', e.target.value)
+                          }
+                          className="w-full bg-transparent text-[11px] font-bold text-slate-900 truncate focus:outline-none focus:bg-yellow-50"
+                        />
+                      </div>
+                      <div className="flex items-center gap-0.5">
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={item.amount === 0 ? '' : item.amount}
+                          placeholder="0"
+                          onKeyDown={handleKeyDownNavigation}
+                          onChange={(e) =>
+                            updateListField(
+                              'purchases',
+                              item.id,
+                              'amount',
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
+                          className="w-14 text-center font-mono font-bold text-xs bg-white border border-slate-200 rounded py-0.5 focus:border-slate-800"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => deleteListItem('purchases', item.id)}
+                          className="text-slate-300 hover:text-rose-600 p-0.5"
+                          title="حذف البند"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-orange-200 mt-2 flex items-center justify-between text-xs font-bold bg-orange-100 p-1.5 rounded">
+                <span className="text-orange-950 font-black">مجموع المشتريات:</span>
+                <span className="font-mono text-orange-950 font-black">
+                  {formatNumber(summary.totalPurchases)} د.أ
+                </span>
+              </div>
+            </div>
+
+            {/* ======================================================== */}
+            {/* Column 3 (md:col-span-2): المحفظة + جدول العُهد (3 أسطر) */}
+            {/* ======================================================== */}
+            <div className="md:col-span-2 space-y-3">
+              {/* المحفظة الإلكترونية (Zain Cash, CliQ, إلخ) */}
+              <div className="border border-indigo-300 rounded-lg p-2 bg-indigo-50/30">
+                <div className="flex items-center justify-between font-bold text-xs bg-indigo-700 text-white px-2 py-0.5 rounded mb-1">
+                  <span>المحفظة الإلكترونية</span>
+                  <button
+                    type="button"
+                    onClick={() => addListItem('walletExpenses', 'محفظة')}
+                    className="text-[10px] bg-white text-indigo-900 px-1.5 rounded hover:bg-indigo-100 font-bold"
+                  >
+                    + محفظة
+                  </button>
+                </div>
+                <div className="space-y-1 text-xs max-h-36 overflow-y-auto">
+                  {report.walletExpenses.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between gap-1">
+                      <input
+                        type="text"
+                        value={item.name}
+                        onChange={(e) =>
+                          updateListField('walletExpenses', item.id, 'name', e.target.value)
+                        }
+                        className="w-16 bg-transparent text-[11px] font-semibold truncate"
+                      />
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={item.amount === 0 ? '' : item.amount}
+                        placeholder="0"
+                        onKeyDown={handleKeyDownNavigation}
+                        onChange={(e) =>
+                          updateListField(
+                            'walletExpenses',
+                            item.id,
+                            'amount',
+                            parseFloat(e.target.value) || 0
+                          )
+                        }
+                        className="w-12 text-center font-mono font-bold text-xs bg-white border border-slate-200 rounded"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-1 mt-1 border-t border-indigo-200 flex justify-between text-[11px] font-black text-indigo-950">
+                  <span>المجموع:</span>
+                  <span className="font-mono">{formatNumber(summary.totalWallet)} د.أ</span>
+                </div>
+              </div>
+
+              {/* جدول العُهد (3 أسطر: له وعليه) */}
+              <div className="border-2 border-slate-700 rounded-lg p-2 bg-slate-50/70">
+                <div className="flex items-center justify-between font-black text-xs bg-slate-800 text-white px-2 py-0.5 rounded mb-1">
+                  <span>جدول العُهد (3 أسطر)</span>
+                  <span className="text-[10px] text-yellow-300">له / عليه</span>
+                </div>
+                <div className="space-y-1.5 text-xs">
+                  {(report.custodyClaims || [
+                    { id: 'cust_1', person: 'عهدة 1', forThem: 0, onThem: 0, notes: '' },
+                    { id: 'cust_2', person: 'عهدة 2', forThem: 0, onThem: 0, notes: '' },
+                    { id: 'cust_3', person: 'عهدة 3', forThem: 0, onThem: 0, notes: '' }
+                  ]).slice(0, 3).map((item, idx) => (
+                    <div key={item.id || idx} className="p-1 bg-white rounded border border-slate-300 space-y-0.5">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-[10px] font-bold text-slate-500 font-mono">{idx + 1}.</span>
+                        <input
+                          type="text"
+                          value={item.person}
+                          placeholder={`صاحب العهدة ${idx + 1}`}
+                          onChange={(e) => updateCustodyClaim(item.id, 'person', e.target.value)}
+                          className="w-full text-[11px] font-bold text-slate-900 bg-transparent"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-1 text-[10px]">
+                        <div className="flex items-center gap-0.5 bg-emerald-50 p-0.5 rounded border border-emerald-200">
+                          <span className="font-bold text-emerald-800 shrink-0 text-[9px]">له:</span>
+                          <input
+                            type="number"
+                            step="0.5"
+                            value={item.forThem === 0 ? '' : item.forThem}
+                            placeholder="0"
+                            title="له: هو يريد من الكاش"
+                            onChange={(e) => updateCustodyClaim(item.id, 'forThem', parseFloat(e.target.value) || 0)}
+                            className="w-full text-center font-mono font-bold text-emerald-950 bg-white rounded text-[10px]"
+                          />
+                        </div>
+                        <div className="flex items-center gap-0.5 bg-rose-50 p-0.5 rounded border border-rose-200">
+                          <span className="font-bold text-rose-800 shrink-0 text-[9px]">عليه:</span>
+                          <input
+                            type="number"
+                            step="0.5"
+                            value={item.onThem === 0 ? '' : item.onThem}
+                            placeholder="0"
+                            title="عليه: الكاش يريد منه"
+                            onChange={(e) => updateCustodyClaim(item.id, 'onThem', parseFloat(e.target.value) || 0)}
+                            className="w-full text-center font-mono font-bold text-rose-950 bg-white rounded text-[10px]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* ======================================================== */}
+            {/* Column 4 (md:col-span-2): يحيى + بهارات + صيانة + أبو عبدالله */}
             {/* ======================================================== */}
             <div className="md:col-span-2 space-y-3">
               {/* حساب يحيى */}
@@ -935,7 +1171,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                   <span>بهارات</span>
                   <span className="font-mono text-xs">{formatNumber(summary.totalSpices)}</span>
                 </div>
-                <div className="space-y-1 max-h-48 overflow-y-auto pr-0.5 text-xs">
+                <div className="space-y-1 max-h-36 overflow-y-auto pr-0.5 text-xs">
                   {report.spices.map((item) => (
                     <div key={item.id} className="flex items-center justify-between gap-1">
                       <input
@@ -1002,10 +1238,54 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                   ))}
                 </div>
               </div>
+
+              {/* أبو عبدالله */}
+              <div className="border border-slate-700 rounded-lg p-2 bg-slate-50/40">
+                <div className="flex items-center justify-between font-bold text-xs bg-cyan-100 text-cyan-900 px-2 py-0.5 rounded mb-1">
+                  <span>أبو عبدالله</span>
+                  <button
+                    type="button"
+                    onClick={() => addListItem('abuAbdullahAccount', 'سحب')}
+                    className="text-[10px] bg-white px-1.5 rounded hover:bg-slate-300 font-bold"
+                  >
+                    +
+                  </button>
+                </div>
+                <div className="space-y-1 text-xs">
+                  {report.abuAbdullahAccount.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between gap-1">
+                      <input
+                        type="text"
+                        value={item.name}
+                        onChange={(e) =>
+                          updateListField('abuAbdullahAccount', item.id, 'name', e.target.value)
+                        }
+                        className="w-16 bg-transparent text-[11px] font-semibold"
+                      />
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={item.amount === 0 ? '' : item.amount}
+                        placeholder="0"
+                        onKeyDown={handleKeyDownNavigation}
+                        onChange={(e) =>
+                          updateListField(
+                            'abuAbdullahAccount',
+                            item.id,
+                            'amount',
+                            parseFloat(e.target.value) || 0
+                          )
+                        }
+                        className="w-12 text-center font-mono font-bold text-xs bg-white border border-slate-200 rounded"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* ======================================================== */}
-            {/* Column 3 (md:col-span-2): مصاريف إدارية + الشقة + أبو عبدالله */}
+            {/* Column 5 (md:col-span-2): مصاريف إدارية + الشقة + ذمم تجار + مصاريف أخرى */}
             {/* ======================================================== */}
             <div className="md:col-span-2 space-y-3">
               {/* مصاريف إدارية */}
@@ -1014,7 +1294,7 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                   <span>مصاريف إدارية</span>
                   <span className="font-mono text-xs">{formatNumber(summary.totalAdminExpenses)}</span>
                 </div>
-                <div className="space-y-1 max-h-52 overflow-y-auto pr-0.5 text-xs">
+                <div className="space-y-1 max-h-40 overflow-y-auto pr-0.5 text-xs">
                   {report.adminExpenses.map((item) => (
                     <div key={item.id} className="flex items-center justify-between gap-1">
                       <input
@@ -1086,99 +1366,6 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                 </div>
               </div>
 
-              {/* المحفظة الإلكترونية (Zain Cash, CliQ, إلخ) */}
-              <div className="border border-slate-700 rounded-lg p-2 bg-slate-50/40">
-                <div className="flex items-center justify-between font-bold text-xs bg-indigo-100 text-indigo-900 px-2 py-0.5 rounded mb-1">
-                  <span>المحفظة الإلكترونية</span>
-                  <button
-                    type="button"
-                    onClick={() => addListItem('walletExpenses', 'محفظة')}
-                    className="text-[10px] bg-white px-1.5 rounded hover:bg-slate-300 font-bold"
-                  >
-                    + محفظة
-                  </button>
-                </div>
-                <div className="space-y-1 text-xs">
-                  {report.walletExpenses.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between gap-1">
-                      <input
-                        type="text"
-                        value={item.name}
-                        onChange={(e) =>
-                          updateListField('walletExpenses', item.id, 'name', e.target.value)
-                        }
-                        className="w-16 bg-transparent text-[11px] font-semibold truncate"
-                      />
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={item.amount === 0 ? '' : item.amount}
-                        placeholder="0"
-                        onKeyDown={handleKeyDownNavigation}
-                        onChange={(e) =>
-                          updateListField(
-                            'walletExpenses',
-                            item.id,
-                            'amount',
-                            parseFloat(e.target.value) || 0
-                          )
-                        }
-                        className="w-12 text-center font-mono font-bold text-xs bg-white border border-slate-200 rounded"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* أبو عبدالله */}
-              <div className="border border-slate-700 rounded-lg p-2 bg-slate-50/40">
-                <div className="flex items-center justify-between font-bold text-xs bg-cyan-100 text-cyan-900 px-2 py-0.5 rounded mb-1">
-                  <span>أبو عبدالله</span>
-                  <button
-                    type="button"
-                    onClick={() => addListItem('abuAbdullahAccount', 'سحب')}
-                    className="text-[10px] bg-white px-1.5 rounded hover:bg-slate-300 font-bold"
-                  >
-                    +
-                  </button>
-                </div>
-                <div className="space-y-1 text-xs">
-                  {report.abuAbdullahAccount.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between gap-1">
-                      <input
-                        type="text"
-                        value={item.name}
-                        onChange={(e) =>
-                          updateListField('abuAbdullahAccount', item.id, 'name', e.target.value)
-                        }
-                        className="w-16 bg-transparent text-[11px] font-semibold"
-                      />
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={item.amount === 0 ? '' : item.amount}
-                        placeholder="0"
-                        onKeyDown={handleKeyDownNavigation}
-                        onChange={(e) =>
-                          updateListField(
-                            'abuAbdullahAccount',
-                            item.id,
-                            'amount',
-                            parseFloat(e.target.value) || 0
-                          )
-                        }
-                        className="w-12 text-center font-mono font-bold text-xs bg-white border border-slate-200 rounded"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* ======================================================== */}
-            {/* Column 4 (md:col-span-2): إضافة وسداد ذمم تجار + مصاريف أخرى */}
-            {/* ======================================================== */}
-            <div className="md:col-span-2 space-y-3">
               {/* إضافة ذمم تجار */}
               <div className="border border-slate-700 rounded-lg p-2 bg-slate-50/40">
                 <div className="flex items-center justify-between font-bold text-xs bg-amber-100 text-amber-900 px-2 py-0.5 rounded mb-1">
@@ -1309,100 +1496,6 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                     </div>
                   ))}
                 </div>
-              </div>
-            </div>
-
-            {/* ======================================================== */}
-            {/* Column 5 (md:col-span-3): مشتريات (Purchases Column) */}
-            {/* ======================================================== */}
-            <div className="md:col-span-3 border border-slate-700 rounded-lg p-2 bg-slate-50/40 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between font-black text-xs bg-orange-100 text-orange-950 px-2 py-1 rounded mb-2">
-                  <span>مشتريات</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-mono text-xs">{formatNumber(summary.totalPurchases)}</span>
-                    <button
-                      type="button"
-                      onClick={() => addListItem('purchases', 'مادة')}
-                      className="bg-orange-600 text-white px-1.5 py-0.5 rounded text-[10px] hover:bg-orange-700 font-bold"
-                    >
-                      + سطر جديد
-                    </button>
-                  </div>
-                </div>
-
-                {/* Cashier Quick-Add Preset Chips */}
-                <div className="mb-2 p-1.5 bg-orange-50/80 rounded border border-orange-200/60">
-                  <span className="text-[10px] font-black text-orange-900 block mb-1">
-                    إضافة سريعة لبنود شائعة:
-                  </span>
-                  <div className="flex flex-wrap gap-1">
-                    {COMMON_PURCHASE_PRESETS.map((preset) => (
-                      <button
-                        key={preset.name}
-                        type="button"
-                        onClick={() => addListItem('purchases', preset.name, preset.amount)}
-                        className="px-1.5 py-0.5 bg-white hover:bg-orange-100 border border-orange-300 text-orange-950 rounded text-[10px] font-bold transition-colors"
-                      >
-                        +{preset.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-1 max-h-96 overflow-y-auto pr-1 text-xs">
-                  {report.purchases.map((item, idx) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between gap-1 py-0.5 border-b border-slate-100 last:border-0"
-                    >
-                      <div className="flex items-center gap-1 flex-1">
-                        <span className="text-[10px] text-slate-400 font-mono w-4">{idx + 1}</span>
-                        <input
-                          type="text"
-                          value={item.name}
-                          onChange={(e) =>
-                            updateListField('purchases', item.id, 'name', e.target.value)
-                          }
-                          className="w-full bg-transparent text-[11px] font-bold text-slate-900 truncate focus:outline-none focus:bg-yellow-50"
-                        />
-                      </div>
-                      <div className="flex items-center gap-0.5">
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={item.amount === 0 ? '' : item.amount}
-                          placeholder="0"
-                          onKeyDown={handleKeyDownNavigation}
-                          onChange={(e) =>
-                            updateListField(
-                              'purchases',
-                              item.id,
-                              'amount',
-                              parseFloat(e.target.value) || 0
-                            )
-                          }
-                          className="w-14 text-center font-mono font-bold text-xs bg-white border border-slate-200 rounded py-0.5 focus:border-slate-800"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => deleteListItem('purchases', item.id)}
-                          className="text-slate-300 hover:text-rose-600 p-0.5"
-                          title="حذف البند"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-slate-300 mt-2 flex items-center justify-between text-xs font-bold bg-orange-50/80 p-1.5 rounded">
-                <span>مجموع المشتريات:</span>
-                <span className="font-mono text-orange-950 font-black">
-                  {formatNumber(summary.totalPurchases)} د.أ
-                </span>
               </div>
             </div>
           </div>
@@ -1763,7 +1856,16 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
           {/* 28 Staff Table from Image 2 */}
           <div className="border-2 border-slate-800 rounded-xl overflow-hidden shadow-sm bg-white">
             <div className="bg-slate-900 text-white p-2.5 flex items-center justify-between text-xs font-bold">
-              <span>كشف الموظفين وسجل الدوام والسلف (28 موظف - مطعم شاورما البيك)</span>
+              <div className="flex items-center gap-2">
+                <span>كشف الموظفين وسجل الدوام والسلف واليوميات (28 موظف - مطعم يحيى البيك)</span>
+                <button
+                  type="button"
+                  onClick={onOpenEmployeesModal}
+                  className="px-2 py-0.5 bg-teal-600 hover:bg-teal-500 text-white rounded text-[11px] font-bold"
+                >
+                  فتح الكشف الكامل والتحكم المتقدم
+                </button>
+              </div>
               <span className="text-yellow-400 font-mono font-black">
                 إجمالي السلف: {formatNumber(summary.totalAdvances)} د.أ
               </span>
@@ -1773,169 +1875,212 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
               <table className="w-full text-center text-xs border-collapse">
                 <thead className="bg-slate-100 font-extrabold text-slate-900 sticky top-0 border-b-2 border-slate-300 shadow-sm z-10">
                   <tr>
-                    <th className="py-2 px-2 border-l border-slate-200 w-10">الرقم</th>
-                    <th className="py-2 px-3 border-l border-slate-200 text-right min-w-[140px]">
+                    <th className="py-2 px-2 border-l border-slate-200 w-10">م</th>
+                    <th className="py-2 px-3 border-l border-slate-200 text-right min-w-[130px]">
                       اسم الموظف
                     </th>
-                    <th className="py-2 px-3 border-l border-slate-200 text-red-700 min-w-[160px]">
-                      السلفة (د.أ) وسرعة الاختيار
+                    <th className="py-2 px-2 border-l border-slate-200 w-24">
+                      نوع التوظيف
                     </th>
-                    <th className="py-2 px-3 border-l border-slate-200 text-slate-700 min-w-[70px]">
-                      مواصلات
+                    <th className="py-2 px-2 border-l border-slate-200 w-20">
+                      أجر الساعة
                     </th>
-                    <th className="py-2 px-2 border-l border-slate-200 min-w-[70px]">دخول</th>
-                    <th className="py-2 px-2 border-l border-slate-200 min-w-[70px]">خروج</th>
-                    <th className="py-2 px-3 border-l border-slate-200 min-w-[110px]">ملاحظات</th>
-                    <th className="py-2 px-2 w-20">توقيع واستلام</th>
+                    <th className="py-2 px-2 border-l border-slate-200 min-w-[65px]">دخول</th>
+                    <th className="py-2 px-2 border-l border-slate-200 min-w-[65px]">خروج</th>
+                    <th className="py-2 px-2 border-l border-slate-200 w-16">الساعات</th>
+                    <th className="py-2 px-2 border-l border-slate-200 min-w-[90px] text-emerald-800 bg-emerald-50">
+                      اليومية المحسوبة
+                    </th>
+                    <th className="py-2 px-3 border-l border-slate-200 text-red-700 min-w-[140px]">
+                      السلفة (د.أ)
+                    </th>
+                    <th className="py-2 px-3 border-l border-slate-200 min-w-[90px]">ملاحظات</th>
+                    <th className="py-2 px-2 w-16">توقيع</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 font-semibold">
-                  {report.employees.map((emp, index) => (
-                    <tr
-                      key={emp.id}
-                      className={`hover:bg-amber-50/50 transition-colors ${
-                        emp.advance > 0 || emp.signed ? 'bg-amber-50/20' : ''
-                      }`}
-                    >
-                      <td className="py-1.5 px-2 border-l border-slate-200 font-mono font-bold text-slate-500">
-                        {emp.number || index + 1}
-                      </td>
-                      <td className="py-1.5 px-3 border-l border-slate-200 text-right font-black text-slate-900">
-                        <input
-                          type="text"
-                          value={emp.name}
-                          onChange={(e) => updateEmployee(emp.id, 'name', e.target.value)}
-                          className="w-full bg-transparent font-bold focus:outline-none focus:bg-yellow-100 rounded px-1"
-                        />
-                      </td>
-                      <td className="py-1.5 px-2 border-l border-slate-200">
-                        <div className="flex items-center justify-center gap-1">
+                  {report.employees.map((emp, index) => {
+                    const isDaily = (emp.employmentType || 'daily') === 'daily';
+                    const hours = emp.hoursWorked ?? calculateShiftHours(emp.shiftIn, emp.shiftOut);
+                    const wage = isDaily ? (emp.calculatedWage ?? computeHourlyWage(hours, emp.hourlyRate || 1.5, 'daily')) : 0;
+
+                    return (
+                      <tr
+                        key={emp.id}
+                        className={`hover:bg-amber-50/50 transition-colors ${
+                          !isDaily ? 'bg-indigo-50/15' : ''
+                        } ${emp.advance > 0 || emp.signed ? 'bg-amber-50/20' : ''}`}
+                      >
+                        <td className="py-1.5 px-2 border-l border-slate-200 font-mono font-bold text-slate-500">
+                          {emp.number || index + 1}
+                        </td>
+                        <td className="py-1.5 px-3 border-l border-slate-200 text-right font-black text-slate-900">
                           <input
-                            type="number"
-                            step="0.5"
-                            value={emp.advance === 0 ? '' : emp.advance}
-                            placeholder="-"
-                            onKeyDown={handleKeyDownNavigation}
-                            onChange={(e) =>
+                            type="text"
+                            value={emp.name}
+                            onChange={(e) => updateEmployee(emp.id, 'name', e.target.value)}
+                            className="w-full bg-transparent font-bold focus:outline-none focus:bg-yellow-100 rounded px-1"
+                          />
+                        </td>
+                        {/* Employment type toggle */}
+                        <td className="py-1.5 px-1 border-l border-slate-200">
+                          <button
+                            type="button"
+                            onClick={() =>
                               updateEmployee(
                                 emp.id,
-                                'advance',
-                                parseFloat(e.target.value) || 0
+                                'employmentType',
+                                isDaily ? 'monthly' : 'daily'
                               )
                             }
-                            className={`w-14 text-center font-mono font-black py-0.5 rounded border ${
-                              emp.advance > 0
-                                ? 'bg-red-50 text-red-700 border-red-300'
-                                : 'bg-white text-slate-600 border-slate-200'
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors ${
+                              isDaily
+                                ? 'bg-amber-100 text-amber-950 border-amber-300'
+                                : 'bg-indigo-100 text-indigo-950 border-indigo-300'
                             }`}
+                          >
+                            {isDaily ? 'مياومة' : 'شهري'}
+                          </button>
+                        </td>
+                        {/* Hourly rate */}
+                        <td className="py-1.5 px-1 border-l border-slate-200">
+                          {isDaily ? (
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={emp.hourlyRate || 1.5}
+                              onChange={(e) =>
+                                updateEmployee(
+                                  emp.id,
+                                  'hourlyRate',
+                                  parseFloat(e.target.value) || 0
+                                )
+                              }
+                              className="w-12 text-center font-mono font-bold text-xs bg-amber-50/50 border border-amber-200 rounded py-0.5"
+                            />
+                          ) : (
+                            <span className="text-[10px] text-slate-400 font-medium">-</span>
+                          )}
+                        </td>
+                        <td className="py-1.5 px-1 border-l border-slate-200">
+                          <input
+                            type="text"
+                            value={emp.shiftIn || ''}
+                            placeholder="10:00"
+                            onKeyDown={handleKeyDownNavigation}
+                            onChange={(e) => updateEmployee(emp.id, 'shiftIn', e.target.value)}
+                            className="w-14 text-center font-mono text-xs py-0.5 bg-slate-50 border border-slate-200 rounded"
                           />
-                          {/* Quick advance chips */}
-                          <div className="hidden sm:flex items-center gap-0.5">
-                            {[2.5, 5, 10, 25].map((amt) => (
-                              <button
-                                key={amt}
-                                type="button"
-                                onClick={() => setEmployeeAdvanceQuick(emp.id, amt)}
-                                className={`px-1 py-0.5 rounded text-[9px] font-mono font-bold transition-all ${
-                                  emp.advance === amt
-                                    ? 'bg-red-600 text-white'
-                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                                }`}
-                              >
-                                {amt}
-                              </button>
-                            ))}
-                            {emp.advance > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => setEmployeeAdvanceQuick(emp.id, 0)}
-                                className="px-1 py-0.5 rounded text-[9px] bg-slate-200 text-slate-600 hover:bg-rose-100 hover:text-rose-700"
-                                title="تصفير"
-                              >
-                                0
-                              </button>
-                            )}
+                        </td>
+                        <td className="py-1.5 px-1 border-l border-slate-200">
+                          <input
+                            type="text"
+                            value={emp.shiftOut || ''}
+                            placeholder="22:00"
+                            onKeyDown={handleKeyDownNavigation}
+                            onChange={(e) => updateEmployee(emp.id, 'shiftOut', e.target.value)}
+                            className="w-14 text-center font-mono text-xs py-0.5 bg-slate-50 border border-slate-200 rounded"
+                          />
+                        </td>
+                        <td className="py-1.5 px-1 border-l border-slate-200">
+                          <span className="font-mono font-bold text-xs text-sky-900 bg-sky-50 px-1 py-0.5 rounded">
+                            {hours > 0 ? `${hours}س` : '-'}
+                          </span>
+                        </td>
+                        <td className="py-1.5 px-2 border-l border-slate-200 bg-emerald-50/30">
+                          {isDaily ? (
+                            <span className="font-mono font-black text-xs text-emerald-900">
+                              {wage > 0 ? `${formatNumber(wage)}` : '0.00'}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 font-normal">
+                              راتب شهري
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-1.5 px-2 border-l border-slate-200">
+                          <div className="flex items-center justify-center gap-1">
+                            <input
+                              type="number"
+                              step="0.5"
+                              value={emp.advance === 0 ? '' : emp.advance}
+                              placeholder="-"
+                              onKeyDown={handleKeyDownNavigation}
+                              onChange={(e) =>
+                                updateEmployee(
+                                  emp.id,
+                                  'advance',
+                                  parseFloat(e.target.value) || 0
+                                )
+                              }
+                              className={`w-14 text-center font-mono font-black py-0.5 rounded border ${
+                                emp.advance > 0
+                                  ? 'bg-red-50 text-red-700 border-red-300'
+                                  : 'bg-white text-slate-600 border-slate-200'
+                              }`}
+                            />
+                            <div className="hidden sm:flex items-center gap-0.5">
+                              {[5, 10, 20].map((amt) => (
+                                <button
+                                  key={amt}
+                                  type="button"
+                                  onClick={() => setEmployeeAdvanceQuick(emp.id, amt)}
+                                  className={`px-1 py-0.5 rounded text-[9px] font-mono font-bold transition-all ${
+                                    emp.advance === amt
+                                      ? 'bg-red-600 text-white'
+                                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                                  }`}
+                                >
+                                  {amt}
+                                </button>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="py-1.5 px-2 border-l border-slate-200">
-                        <input
-                          type="number"
-                          step="0.5"
-                          value={emp.transport === 0 ? '' : emp.transport}
-                          placeholder="-"
-                          onKeyDown={handleKeyDownNavigation}
-                          onChange={(e) =>
-                            updateEmployee(
-                              emp.id,
-                              'transport',
-                              parseFloat(e.target.value) || 0
-                            )
-                          }
-                          className="w-12 text-center font-mono py-0.5 bg-white text-slate-700 border border-slate-200 rounded"
-                        />
-                      </td>
-                      <td className="py-1.5 px-2 border-l border-slate-200">
-                        <input
-                          type="text"
-                          value={emp.shiftIn || ''}
-                          placeholder="00:00"
-                          onKeyDown={handleKeyDownNavigation}
-                          onChange={(e) => updateEmployee(emp.id, 'shiftIn', e.target.value)}
-                          className="w-14 text-center font-mono text-xs py-0.5 bg-slate-50 border border-slate-200 rounded"
-                        />
-                      </td>
-                      <td className="py-1.5 px-2 border-l border-slate-200">
-                        <input
-                          type="text"
-                          value={emp.shiftOut || ''}
-                          placeholder="00:00"
-                          onKeyDown={handleKeyDownNavigation}
-                          onChange={(e) => updateEmployee(emp.id, 'shiftOut', e.target.value)}
-                          className="w-14 text-center font-mono text-xs py-0.5 bg-slate-50 border border-slate-200 rounded"
-                        />
-                      </td>
-                      <td className="py-1.5 px-2 border-l border-slate-200">
-                        <input
-                          type="text"
-                          value={emp.notes || ''}
-                          placeholder="-"
-                          onChange={(e) => updateEmployee(emp.id, 'notes', e.target.value)}
-                          className="w-full text-right text-xs py-0.5 bg-transparent border-b border-transparent focus:border-slate-400 focus:bg-yellow-50"
-                        />
-                      </td>
-                      <td className="py-1.5 px-2">
-                        <button
-                          type="button"
-                          onClick={() => updateEmployee(emp.id, 'signed', !emp.signed)}
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all flex items-center justify-center gap-1 mx-auto ${
-                            emp.signed
-                              ? 'bg-emerald-600 text-white'
-                              : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
-                          }`}
-                        >
-                          {emp.signed ? <Check className="w-3 h-3" /> : 'توقيع'}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="py-1.5 px-2 border-l border-slate-200">
+                          <input
+                            type="text"
+                            value={emp.notes || ''}
+                            placeholder="-"
+                            onChange={(e) => updateEmployee(emp.id, 'notes', e.target.value)}
+                            className="w-full text-right text-xs py-0.5 bg-transparent border-b border-transparent focus:border-slate-400 focus:bg-yellow-50"
+                          />
+                        </td>
+                        <td className="py-1.5 px-2">
+                          <button
+                            type="button"
+                            onClick={() => updateEmployee(emp.id, 'signed', !emp.signed)}
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all flex items-center justify-center gap-1 mx-auto ${
+                              emp.signed
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                            }`}
+                          >
+                            {emp.signed ? <Check className="w-3 h-3" /> : 'توقيع'}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
                 <tfoot className="bg-slate-900 text-white font-extrabold sticky bottom-0 border-t-2 border-slate-800">
                   <tr>
-                    <td colSpan={2} className="py-2 px-3 text-right">
-                      المجموع الكلي لسلف ومواصلات الموظفين:
+                    <td colSpan={3} className="py-2 px-3 text-right">
+                      المجموع الكلي لسلف ويوميات الموظفين:
+                    </td>
+                    <td colSpan={4} className="py-2 px-2 text-center text-emerald-300 font-mono">
+                      مجموع أجور المياومة: {formatNumber(
+                        report.employees.reduce((sum, e) => {
+                          const isDaily = (e.employmentType || 'daily') === 'daily';
+                          return sum + (isDaily ? (Number(e.calculatedWage) || 0) : 0);
+                        }, 0)
+                      )} د.أ
                     </td>
                     <td className="py-2 px-3 font-mono text-yellow-400 text-sm">
                       {formatNumber(summary.totalAdvances)} د.أ
                     </td>
-                    <td className="py-2 px-3 font-mono text-slate-300">
-                      {formatNumber(
-                        report.employees.reduce((acc, e) => acc + (Number(e.transport) || 0), 0)
-                      )}{' '}
-                      د.أ
-                    </td>
-                    <td colSpan={4} className="py-2 px-3 text-left text-zinc-400 text-[11px]">
-                      تم توقيع واستلام السلف اليومية
+                    <td colSpan={3} className="py-2 px-3 text-left text-zinc-400 text-[11px]">
+                      تم توقيع واستلام السلف واليوميات
                     </td>
                   </tr>
                 </tfoot>

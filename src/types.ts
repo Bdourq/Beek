@@ -22,8 +22,22 @@ export interface EmployeeRecord {
   transport: number;     // مواصلات
   signed: boolean;       // توقيع
   notes: string;         // ملاحظات
-  shiftIn: string;       // دخول
-  shiftOut: string;      // خروج
+  shiftIn: string;       // دخول (HH:mm)
+  shiftOut: string;      // خروج (HH:mm)
+  employmentType?: 'daily' | 'monthly'; // نوع التوظيف: مياومة أو شهري
+  hourlyRate?: number;   // كم يتقاضى بالساعة للمياومة (د.أ/ساعة)
+  wageType?: 'daily' | 'hourly'; // للتوافق القديم
+  wageRate?: number;     // للتوافق القديم
+  hoursWorked?: number;  // عدد ساعات العمل المحسوبة
+  calculatedWage?: number; // اليومية المحسوبة تلقائياً (فقط للمياومة، 0 للشهري)
+}
+
+export interface CustodyClaim {
+  id: string;
+  person: string;
+  forThem: number;  // له (هو يريد من الكاش)
+  onThem: number;   // عليه (الكاش يريد منه)
+  notes?: string;   // ملاحظات
 }
 
 export interface ProductionItem {
@@ -73,6 +87,7 @@ export interface DailyReport {
   yahyaAccount: ExpenseItem[];       // حساب يحيى (اوردر، سحوبات)
   abuAbdullahAccount: ExpenseItem[]; // حساب أبو عبدالله
   walletExpenses: ExpenseItem[];     // المحفظة (Zain Cash, CliQ, etc.)
+  custodyClaims?: CustodyClaim[];    // جدول العُهد (له وعليه - 3 أسطر)
   otherExpenses: ExpenseItem[];      // المصاريف الأخرى
 
   // 3. Staff & Advances

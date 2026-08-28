@@ -220,11 +220,11 @@ export function App() {
             <button
               type="button"
               onClick={() => setIsEmployeesModalOpen(true)}
-              className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-100 border border-zinc-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
-              title="كشف سلف الموظفين"
+              className="px-3.5 py-1.5 bg-teal-600 hover:bg-teal-500 text-white border-2 border-teal-300 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md shadow-teal-900/40 transition-all hover:scale-102 cursor-pointer"
+              title="كشف كادر الموظفين والدوام والسلف واليوميات"
             >
-              <Users className="w-3.5 h-3.5 text-yellow-400" />
-              <span className="hidden md:inline">سلف الموظفين</span>
+              <Users className="w-4 h-4 text-yellow-300" />
+              <span>👥 كادر الموظفين (28)</span>
             </button>
 
             <button
