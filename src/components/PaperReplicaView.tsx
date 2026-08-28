@@ -1072,8 +1072,9 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
                   {(report.custodyClaims || [
                     { id: 'cust_1', person: 'عهدة 1', forThem: 0, onThem: 0, notes: '' },
                     { id: 'cust_2', person: 'عهدة 2', forThem: 0, onThem: 0, notes: '' },
-                    { id: 'cust_3', person: 'عهدة 3', forThem: 0, onThem: 0, notes: '' }
-                  ]).slice(0, 3).map((item, idx) => (
+                    { id: 'cust_3', person: 'عهدة 3', forThem: 0, onThem: 0, notes: '' },
+                    { id: 'cust_4', person: 'عهدة 4', forThem: 0, onThem: 0, notes: '' }
+                  ]).slice(0, 4).map((item, idx) => (
                     <div key={item.id || idx} className="p-1 bg-white rounded border border-slate-300 space-y-0.5">
                       <div className="flex items-center justify-between gap-1">
                         <span className="text-[10px] font-bold text-slate-500 font-mono">{idx + 1}.</span>

@@ -2,7 +2,6 @@ import React from 'react';
 import { DailyReport, SummaryCalculations } from '../types';
 import { formatNumber } from '../utils/calculations';
 import { calculateShiftHours, computeHourlyWage } from './EmployeesSection';
-import { AlBaikLogo } from './AlBaikLogo';
 
 interface PrintPaperReplicaProps {
   report: DailyReport;
@@ -10,543 +9,346 @@ interface PrintPaperReplicaProps {
 }
 
 export const PrintPaperReplica: React.FC<PrintPaperReplicaProps> = ({ report, summary }) => {
-  const custodyList = report.custodyClaims || [
-    { id: 'cust_1', person: 'عهدة 1', forThem: 0, onThem: 0, notes: '' },
-    { id: 'cust_2', person: 'عهدة 2', forThem: 0, onThem: 0, notes: '' },
-    { id: 'cust_3', person: 'عهدة 3', forThem: 0, onThem: 0, notes: '' }
+  // Cash Side
+  const cashArr = [
+    { label: 'النقد الافتتاحي', value: report.openingCash },
+    { label: 'اضافة ذمم', value: summary.totalVendorDebtsAdded },
+    { label: 'تسديد ذمم قديمة', value: summary.totalVendorDebtsPaid },
+    { label: 'مبيعات', value: report.sales },
+    { label: 'مبيعات أخرى', value: report.otherSales },
+    { label: 'مجموع الكاش', value: summary.totalGrossCashAvailable, isHighlight: true }
   ];
 
-  const totalDailyWages = report.employees.reduce((sum, e) => {
-    const isDaily = (e.employmentType || 'daily') === 'daily';
-    if (!isDaily) return sum;
-    const hours = e.hoursWorked ?? calculateShiftHours(e.shiftIn, e.shiftOut);
-    const wage = e.calculatedWage ?? computeHourlyWage(hours, e.hourlyRate || 1.5, 'daily');
-    return sum + (Number(wage) || 0);
-  }, 0);
+  // Inventory Side
+  const invArr = [
+    { label: 'نقد (الكاش الفعلي)', value: report.actualCashInDrawer },
+    { label: 'فيزا', value: report.visaPOS },
+    { label: 'Rt', value: report.rtPOS },
+    { label: 'مايسترو', value: report.maestroPOS },
+    { label: 'فرق سعر', value: report.priceDiff },
+    { label: 'سلف', value: summary.totalAdvances },
+    { label: 'المحفظة', value: summary.totalWallet },
+    { label: 'مشتريات', value: summary.totalPurchases },
+    { label: 'سداد ذمم تجار', value: summary.totalVendorDebtsPaid },
+    { label: 'مصاريف أخرى', value: summary.totalOtherExpenses },
+    { label: 'الشقة', value: summary.totalApartmentExpenses },
+    { label: 'مصاريف إدارية', value: summary.totalAdminExpenses },
+    { label: 'يحيى', value: summary.totalYahya },
+    { label: 'أبو عبدالله', value: summary.totalAbuAbdullah },
+    { label: 'بهارات', value: summary.totalSpices },
+    { label: 'معدات وصيانة', value: summary.totalMaintenance },
+    { label: 'مجموع الجرد', value: summary.totalReconciledInventory, isHighlight: true },
+    { label: 'نقص الكاش', value: summary.differenceType === 'shortage' ? summary.cashDifference : 0, isHighlight: true, highlightColor: 'bg-red-50 text-red-900' },
+    { label: 'زيادة الكاش', value: summary.differenceType === 'surplus' ? summary.cashDifference : 0, isHighlight: true, highlightColor: 'bg-emerald-50 text-emerald-900' }
+  ];
 
-  const totalStaffHours = report.employees.reduce((sum, e) => {
-    const hours = e.hoursWorked ?? calculateShiftHours(e.shiftIn, e.shiftOut);
-    return sum + (Number(hours) || 0);
-  }, 0);
+  // Section 2 Data
+  const adminPredefined = ['ضمان', 'كهرباء', 'فاتورة نت', 'فاتورة اتصال', 'ضيافة', 'دعاية', 'قرطاسية'];
+  const adminExp = adminPredefined.map(name => {
+    const found = report.adminExpenses.find(a => a.name.includes(name) || name.includes(a.name));
+    return { name, amount: found?.amount };
+  });
+  const otherAdmin = report.adminExpenses.filter(a => !adminPredefined.some(p => a.name.includes(p) || p.includes(a.name)));
+  const allAdmin = [...adminExp, ...otherAdmin];
+
+  const maxSec2 = Math.max(report.purchases.length || 1, report.walletExpenses.length || 1, allAdmin.length || 1);
+  const sec2Rows = Array.from({ length: maxSec2 }).map((_, i) => ({
+    purch: report.purchases[i],
+    wallet: report.walletExpenses[i],
+    admin: allAdmin[i]
+  }));
 
   return (
-    <div className="print-only-container hidden print:block text-black bg-white text-[10px] leading-tight font-['IBM_Plex_Sans_Arabic','Cairo',sans-serif]">
-      {/* ========================================================================= */}
-      {/* PAGE 1 (الوجه الأول - كشف الجرد والمصاريف والمشتريات وحركة الإنتاج) */}
-      {/* ========================================================================= */}
-      <div className="print-page page-break-after p-3 border-2 border-black rounded-lg mb-4 min-h-[980px] flex flex-col justify-between">
-        <div>
-          {/* Header Banner */}
-          <div className="border-b-2 border-black pb-2 mb-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <AlBaikLogo size="xs" />
-                <div>
-                  <h1 className="text-base font-black text-black">مطعم يحيى البيك - شاورما وسناكات</h1>
-                  <h2 className="text-xs font-bold text-gray-800">
-                    كشف إغلاق الكاش اليومي والجرد الفعلي والمصاريف (الوجه الأول)
-                  </h2>
-                </div>
-              </div>
-              <div className="text-left border border-black p-1.5 rounded bg-gray-50 text-[11px] font-bold">
-                <div>اليوم: <span className="font-black text-black">{report.dayName}</span></div>
-                <div>التاريخ: <span className="font-mono font-black">{report.date}</span></div>
-                <div>الكاشير: <span className="font-black">{report.cashierName || 'كاشير الشفت'}</span></div>
-              </div>
-            </div>
-          </div>
+    <div className="print-only-container hidden print:block text-[#212529] bg-white font-['Cairo',sans-serif] w-full max-w-4xl mx-auto pb-12">
+      <style dangerouslySetInnerHTML={{__html: `
+        @page { size: A4 portrait; margin: 15mm; }
+        @media print {
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; }
+          .page-break { page-break-before: always; }
+          .no-break { page-break-inside: avoid; }
+        }
+      `}} />
+      
+      {/* Header */}
+      <div className="bg-[#1e3a5f] text-white rounded-t-lg text-center py-6 mb-0">
+        <h1 className="text-4xl font-black mb-2 tracking-wide">مطعم يحيى البيك</h1>
+        <h2 className="text-xl opacity-90">تقرير إغلاق الكاش اليومي الشامل</h2>
+      </div>
+      <div className="flex justify-between border border-[#dee2e6] border-t-0 py-3 px-6 rounded-b-lg mb-8 bg-[#f8f9fa] text-base shadow-sm">
+        <div><span className="font-bold text-[#1e3a5f]">اليوم:</span> {report.dayName}</div>
+        <div><span className="font-bold text-[#1e3a5f]">التاريخ:</span> {report.date}</div>
+      </div>
 
-          {/* Section 1: Side-by-Side Cash Balance and Inventory Summary */}
-          <div className="grid grid-cols-12 gap-2 mb-2 border border-black p-2 rounded bg-gray-50/50">
-            {/* Left: ملخص الجرد الفعلي والمصاريف المقابلة (7 cols) */}
-            <div className="col-span-7 border-l border-black pl-2">
-              <div className="bg-black text-white font-black text-center py-0.5 rounded mb-1 text-[11px]">
-                ملخص الجرد الفعلي والمصاريف المقابلة
-              </div>
-              <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px]">
-                <div className="flex justify-between border-b border-gray-300 py-0.5 font-black bg-yellow-50 px-1">
-                  <span>نقد (في الدرج):</span>
-                  <span className="font-mono">{formatNumber(report.actualCashInDrawer)} د.أ</span>
-                </div>
-                <div className="flex justify-between border-b border-gray-300 py-0.5 font-bold">
-                  <span>مشتريات:</span>
-                  <span className="font-mono">{formatNumber(summary.totalPurchases)} د.أ</span>
-                </div>
-                <div className="flex justify-between border-b border-gray-300 py-0.5 font-bold">
-                  <span>سلف الكادر:</span>
-                  <span className="font-mono">{formatNumber(summary.totalAdvances)} د.أ</span>
-                </div>
-                <div className="flex justify-between border-b border-gray-300 py-0.5 font-bold">
-                  <span>سداد تجار:</span>
-                  <span className="font-mono">{formatNumber(summary.totalVendorDebtsPaid)} د.أ</span>
-                </div>
-                <div className="flex justify-between border-b border-gray-300 py-0.5 font-bold">
-                  <span>المحفظة الإلكترونية:</span>
-                  <span className="font-mono">{formatNumber(summary.totalWallet)} د.أ</span>
-                </div>
-                <div className="flex justify-between border-b border-gray-300 py-0.5 font-bold">
-                  <span>مصاريف إدارية:</span>
-                  <span className="font-mono">{formatNumber(summary.totalAdminExpenses)} د.أ</span>
-                </div>
-                <div className="flex justify-between border-b border-gray-300 py-0.5 font-bold">
-                  <span>الشقة:</span>
-                  <span className="font-mono">{formatNumber(summary.totalApartmentExpenses)} د.أ</span>
-                </div>
-                <div className="flex justify-between border-b border-gray-300 py-0.5 font-bold">
-                  <span>مصاريف أخرى:</span>
-                  <span className="font-mono">{formatNumber(summary.totalOtherExpenses)} د.أ</span>
-                </div>
-                <div className="flex justify-between border-b border-gray-300 py-0.5 font-bold">
-                  <span>حساب يحيى:</span>
-                  <span className="font-mono">{formatNumber(summary.totalYahya)} د.أ</span>
-                </div>
-                <div className="flex justify-between border-b border-gray-300 py-0.5 font-bold">
-                  <span>أبو عبدالله:</span>
-                  <span className="font-mono">{formatNumber(summary.totalAbuAbdullah)} د.أ</span>
-                </div>
-                <div className="flex justify-between border-b border-gray-300 py-0.5 font-bold">
-                  <span>فيزا (بطاقات):</span>
-                  <span className="font-mono">{formatNumber(report.visaPOS)} د.أ</span>
-                </div>
-                <div className="flex justify-between border-b border-gray-300 py-0.5 font-bold">
-                  <span>RT (ملغاة):</span>
-                  <span className="font-mono">{formatNumber(report.rtPOS)} د.أ</span>
-                </div>
-                <div className="flex justify-between border-b border-gray-300 py-0.5 font-bold">
-                  <span>مايسترو:</span>
-                  <span className="font-mono">{formatNumber(report.maestroPOS)} د.أ</span>
-                </div>
-                <div className="flex justify-between border-b border-gray-300 py-0.5 font-bold">
-                  <span>فرق سعر:</span>
-                  <span className="font-mono">{formatNumber(report.priceDiff)} د.أ</span>
-                </div>
-                <div className="flex justify-between border-b border-gray-300 py-0.5 font-bold">
-                  <span>بهارات:</span>
-                  <span className="font-mono">{formatNumber(summary.totalSpices)} د.أ</span>
-                </div>
-                <div className="flex justify-between border-b border-gray-300 py-0.5 font-bold">
-                  <span>معدات وصيانة:</span>
-                  <span className="font-mono">{formatNumber(summary.totalMaintenance)} د.أ</span>
-                </div>
-              </div>
-
-              {/* Total Reconciled */}
-              <div className="mt-1.5 pt-1 border-t-2 border-black flex justify-between items-center bg-gray-100 p-1 rounded font-black text-[11px]">
-                <span>مجموع الجرد الفعلي:</span>
-                <span className="font-mono text-sm">{formatNumber(summary.totalReconciledInventory)} د.أ</span>
-              </div>
-            </div>
-
-            {/* Right: حركة الكاش والمبيعات والفرق (5 cols) */}
-            <div className="col-span-5 pr-1 flex flex-col justify-between">
-              <div>
-                <div className="bg-black text-white font-black text-center py-0.5 rounded mb-1 text-[11px]">
-                  حركة الكاش والمبيعات
-                </div>
-                <div className="space-y-1 text-[10px]">
-                  <div className="flex justify-between border-b border-gray-300 py-0.5 font-bold">
-                    <span>النقد الافتتاحي:</span>
-                    <span className="font-mono">{formatNumber(report.openingCash)} د.أ</span>
-                  </div>
-                  <div className="flex justify-between border-b border-gray-300 py-0.5 font-bold">
-                    <span>إضافة ذمم تجار:</span>
-                    <span className="font-mono">{formatNumber(summary.totalVendorDebtsAdded)} د.أ</span>
-                  </div>
-                  <div className="flex justify-between border-b border-gray-300 py-0.5 font-bold">
-                    <span>تسديد ذمم قديمة:</span>
-                    <span className="font-mono">{formatNumber(summary.totalVendorDebtsPaid)} د.أ</span>
-                  </div>
-                  <div className="flex justify-between border-b border-gray-300 py-0.5 font-black bg-amber-50 px-1">
-                    <span>مبيعات اليوم:</span>
-                    <span className="font-mono">{formatNumber(report.sales)} د.أ</span>
-                  </div>
-                  <div className="flex justify-between border-b border-gray-300 py-0.5 font-bold">
-                    <span>مبيعات أخرى:</span>
-                    <span className="font-mono">{formatNumber(report.otherSales)} د.أ</span>
-                  </div>
-                  <div className="flex justify-between border-t-2 border-black pt-1 font-black bg-indigo-50 px-1 text-[11px]">
-                    <span>مجموع الكاش المتوفر:</span>
-                    <span className="font-mono">{formatNumber(summary.totalGrossCashAvailable)} د.أ</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Status / Difference Box */}
-              <div className="mt-2 border-2 border-black p-1.5 rounded text-center font-black text-xs">
-                {summary.differenceType === 'balanced' && (
-                  <div className="bg-emerald-100 text-emerald-950 p-1 rounded">
-                    مطابقة تامة للكاش (0.00 د.أ)
-                  </div>
-                )}
-                {summary.differenceType === 'surplus' && (
-                  <div className="bg-blue-100 text-blue-950 p-1 rounded">
-                    زيادة في الكاش: +{formatNumber(summary.cashDifference)} د.أ
-                  </div>
-                )}
-                {summary.differenceType === 'shortage' && (
-                  <div className="bg-rose-100 text-rose-950 p-1 rounded">
-                    نقص / عجز في الكاش: {formatNumber(summary.cashDifference)} د.أ
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Section 2: جدول العُهد (3 أسطر: له وعليه) */}
-          <div className="mb-2 border border-black rounded overflow-hidden">
-            <div className="bg-gray-800 text-white font-black px-2 py-0.5 text-[10px] flex justify-between">
-              <span>جدول العُهد (له وعليه - 3 أسطر)</span>
-              <span>المجموع: له ({formatNumber(custodyList.reduce((s, c) => s + (Number(c.forThem) || 0), 0))} د.أ) - عليه ({formatNumber(custodyList.reduce((s, c) => s + (Number(c.onThem) || 0), 0))} د.أ)</span>
-            </div>
-            <table className="w-full text-center text-[10px] border-collapse">
-              <thead className="bg-gray-100 font-bold border-b border-black">
-                <tr>
-                  <th className="p-0.5 border-l border-gray-300 w-8">م</th>
-                  <th className="p-0.5 border-l border-gray-300 text-right pr-2">البيان / صاحب العهدة</th>
-                  <th className="p-0.5 border-l border-gray-300 w-28">له (يريد من الكاش)</th>
-                  <th className="p-0.5 border-l border-gray-300 w-28">عليه (الكاش يريد منه)</th>
-                  <th className="p-0.5 text-right pr-2">ملاحظات</th>
+      {/* Section 1: Cash & Inventory */}
+      <div className="mb-10 no-break">
+        <h3 className="text-xl font-bold text-[#1e3a5f] border-b-2 border-[#1e3a5f] pb-2 mb-4">1. بيانات الكاش والمبيعات وملخص الجرد</h3>
+        
+        <div className="flex gap-6">
+          {/* Inventory Table (Left side visually, but in RTL it is right? Actually PDF shows Inventory on the left of the page, Cash on the right) */}
+          <div className="flex-1">
+            <table className="w-full text-sm border-collapse border border-[#dee2e6]">
+              <thead>
+                <tr className="bg-[#f8f9fa]">
+                  <th colSpan={2} className="py-2.5 px-4 border border-[#dee2e6] text-[#1e3a5f] font-bold text-center">ملخص الجرد الفعلي</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
-                {custodyList.slice(0, 3).map((item, idx) => (
-                  <tr key={item.id || idx}>
-                    <td className="p-0.5 border-l border-gray-300 font-mono font-bold">{idx + 1}</td>
-                    <td className="p-0.5 border-l border-gray-300 text-right pr-2 font-bold">{item.person || `عهدة ${idx + 1}`}</td>
-                    <td className="p-0.5 border-l border-gray-300 font-mono font-bold">{item.forThem > 0 ? `${formatNumber(item.forThem)} د.أ` : '-'}</td>
-                    <td className="p-0.5 border-l border-gray-300 font-mono font-bold">{item.onThem > 0 ? `${formatNumber(item.onThem)} د.أ` : '-'}</td>
-                    <td className="p-0.5 text-right pr-2 text-gray-700">{item.notes || '-'}</td>
+              <tbody>
+                {invArr.map((item, idx) => (
+                  <tr key={idx} className={item.isHighlight ? (item.highlightColor || 'bg-[#e2e8f0]') : (idx % 2 === 0 ? 'bg-white' : 'bg-[#fcfcfc]')}>
+                    <td className={`py-2 px-4 border border-[#dee2e6] text-right ${item.isHighlight ? 'font-bold' : ''}`}>
+                      {item.label}
+                    </td>
+                    <td className={`py-2 px-4 border border-[#dee2e6] text-center font-mono w-28 ${item.isHighlight ? 'font-bold' : ''}`}>
+                      {item.value !== undefined && item.value !== '' && item.value !== 0 ? formatNumber(Number(item.value)) : '-'}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          {/* Section 3: Tables Grid: المشتريات أولاً والمصاريف التفصيلية */}
-          <div className="grid grid-cols-12 gap-2 mb-2">
-            {/* المشتريات أولاً (6 cols) */}
-            <div className="col-span-6 border border-black rounded overflow-hidden">
-              <div className="bg-orange-700 text-white font-black px-2 py-0.5 text-[10px] flex justify-between">
-                <span>جدول المشتريات اليومية (المشتريات أولاً)</span>
-                <span className="font-mono">{formatNumber(summary.totalPurchases)} د.أ</span>
-              </div>
-              <table className="w-full text-[9.5px] border-collapse">
-                <thead className="bg-gray-100 font-bold border-b border-black text-center">
-                  <tr>
-                    <th className="p-0.5 border-l border-gray-300 w-6">م</th>
-                    <th className="p-0.5 border-l border-gray-300 text-right pr-1">بيان المادة</th>
-                    <th className="p-0.5 w-16">المبلغ (د.أ)</th>
+          {/* Cash Table */}
+          <div className="flex-1">
+            <table className="w-full text-sm border-collapse border border-[#dee2e6]">
+              <thead>
+                <tr className="bg-[#f8f9fa]">
+                  <th colSpan={2} className="py-2.5 px-4 border border-[#dee2e6] text-[#1e3a5f] font-bold text-center">بيانات الكاش والمبيعات</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cashArr.map((item, idx) => (
+                  <tr key={idx} className={item.isHighlight ? 'bg-[#e2e8f0]' : (idx % 2 === 0 ? 'bg-white' : 'bg-[#fcfcfc]')}>
+                    <td className={`py-2 px-4 border border-[#dee2e6] text-right ${item.isHighlight ? 'font-bold' : ''}`}>
+                      {item.label}
+                    </td>
+                    <td className={`py-2 px-4 border border-[#dee2e6] text-center font-mono w-28 ${item.isHighlight ? 'font-bold' : ''}`}>
+                      {item.value !== undefined && item.value !== '' && item.value !== 0 ? formatNumber(Number(item.value)) : '-'}
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {report.purchases.length > 0 ? (
-                    report.purchases.map((p, idx) => (
-                      <tr key={p.id || idx}>
-                        <td className="p-0.5 text-center border-l border-gray-300 font-mono">{idx + 1}</td>
-                        <td className="p-0.5 border-l border-gray-300 font-bold pr-1">{p.name}</td>
-                        <td className="p-0.5 text-center font-mono font-bold">{formatNumber(p.amount)}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={3} className="p-1 text-center text-gray-400">لا توجد مسجلات مشتريات</td>
-                    </tr>
-                  )}
-                </tbody>
-                <tfoot className="bg-gray-100 font-black border-t border-black">
-                  <tr>
-                    <td colSpan={2} className="p-0.5 text-right pr-2">إجمالي المشتريات:</td>
-                    <td className="p-0.5 text-center font-mono">{formatNumber(summary.totalPurchases)} د.أ</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-
-            {/* المحفظة والمصاريف الإدارية والشقة وباقي البنود (6 cols) */}
-            <div className="col-span-6 space-y-1.5">
-              {/* المحفظة الإلكترونية */}
-              <div className="border border-black rounded overflow-hidden">
-                <div className="bg-indigo-800 text-white font-black px-2 py-0.5 text-[10px] flex justify-between">
-                  <span>المحفظة الإلكترونية والمصاريف الإدارية</span>
-                  <span className="font-mono">{formatNumber(summary.totalWallet + summary.totalAdminExpenses)} د.أ</span>
-                </div>
-                <div className="p-1 grid grid-cols-2 gap-1 text-[9.5px]">
-                  <div className="flex justify-between border-b border-gray-200 py-0.5">
-                    <span className="font-bold">المحفظة (Zain/CliQ):</span>
-                    <span className="font-mono font-bold">{formatNumber(summary.totalWallet)} د.أ</span>
-                  </div>
-                  <div className="flex justify-between border-b border-gray-200 py-0.5">
-                    <span className="font-bold">الشقة وسكن العمال:</span>
-                    <span className="font-mono font-bold">{formatNumber(summary.totalApartmentExpenses)} د.أ</span>
-                  </div>
-                  <div className="flex justify-between border-b border-gray-200 py-0.5">
-                    <span className="font-bold">حساب يحيى:</span>
-                    <span className="font-mono font-bold">{formatNumber(summary.totalYahya)} د.أ</span>
-                  </div>
-                  <div className="flex justify-between border-b border-gray-200 py-0.5">
-                    <span className="font-bold">حساب أبو عبدالله:</span>
-                    <span className="font-mono font-bold">{formatNumber(summary.totalAbuAbdullah)} د.أ</span>
-                  </div>
-                  <div className="flex justify-between border-b border-gray-200 py-0.5">
-                    <span className="font-bold">بهارات:</span>
-                    <span className="font-mono font-bold">{formatNumber(summary.totalSpices)} د.أ</span>
-                  </div>
-                  <div className="flex justify-between border-b border-gray-200 py-0.5">
-                    <span className="font-bold">معدات وصيانة:</span>
-                    <span className="font-mono font-bold">{formatNumber(summary.totalMaintenance)} د.أ</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* ذمم التجار (إضافة وسداد) */}
-              <div className="border border-black rounded overflow-hidden">
-                <div className="bg-gray-700 text-white font-black px-2 py-0.5 text-[10px] flex justify-between">
-                  <span>حركة ذمم التجار</span>
-                  <span>إضافة: {formatNumber(summary.totalVendorDebtsAdded)} | سداد: {formatNumber(summary.totalVendorDebtsPaid)}</span>
-                </div>
-                <div className="p-1 grid grid-cols-2 gap-2 text-[9px]">
-                  <div>
-                    <span className="font-black text-gray-900 block border-b border-gray-300 pb-0.5">سداد تجار:</span>
-                    {report.vendorDebtsPaid.map((v, i) => (
-                      <div key={i} className="flex justify-between py-0.5">
-                        <span>{v.vendorName}:</span>
-                        <span className="font-mono font-bold">{formatNumber(v.amount)}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div>
-                    <span className="font-black text-gray-900 block border-b border-gray-300 pb-0.5">إضافة ذمم:</span>
-                    {report.vendorDebtsAdded.map((v, i) => (
-                      <div key={i} className="flex justify-between py-0.5">
-                        <span>{v.vendorName}:</span>
-                        <span className="font-mono font-bold">{formatNumber(v.amount)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
-
-          {/* Section 4: Kitchen Consumables & Shifts Production */}
-          <div className="border border-black rounded p-1.5 bg-gray-50/80 mb-2">
-            <div className="font-black text-[10px] text-gray-900 border-b border-black pb-0.5 mb-1 flex justify-between">
-              <span>استهلاك المطبخ والإنتاج اليومي</span>
-              <span>حركة الأسياخ والوجبات</span>
-            </div>
-            <div className="grid grid-cols-8 gap-1 text-center text-[9px]">
-              <div className="border border-gray-300 bg-white p-0.5 rounded">
-                <span className="block text-gray-600">سيخ 1 (رز):</span>
-                <span className="font-mono font-bold">{report.kitchenConsumption.rice1 || '-'}</span>
-              </div>
-              <div className="border border-gray-300 bg-white p-0.5 rounded">
-                <span className="block text-gray-600">سيخ 2 (رز):</span>
-                <span className="font-mono font-bold">{report.kitchenConsumption.rice2 || '-'}</span>
-              </div>
-              <div className="border border-gray-300 bg-white p-0.5 rounded">
-                <span className="block text-gray-600">لوز:</span>
-                <span className="font-mono font-bold">{report.kitchenConsumption.almonds || '-'}</span>
-              </div>
-              <div className="border border-gray-300 bg-white p-0.5 rounded">
-                <span className="block text-gray-600">بطاطا:</span>
-                <span className="font-mono font-bold">{report.kitchenConsumption.potatoes || '-'}</span>
-              </div>
-              <div className="border border-gray-300 bg-white p-0.5 rounded">
-                <span className="block text-gray-600">تزويد:</span>
-                <span className="font-mono font-bold">{report.kitchenConsumption.supplyIn || '-'}</span>
-              </div>
-              <div className="border border-gray-300 bg-white p-0.5 rounded">
-                <span className="block text-gray-600">مرتجع:</span>
-                <span className="font-mono font-bold">{report.kitchenConsumption.returns || '-'}</span>
-              </div>
-              <div className="border border-gray-300 bg-white p-0.5 rounded">
-                <span className="block text-gray-600">جنات:</span>
-                <span className="font-mono font-bold">{report.kitchenConsumption.jannat || '-'}</span>
-              </div>
-              <div className="border border-gray-300 bg-white p-0.5 rounded">
-                <span className="block text-gray-600">قشرة:</span>
-                <span className="font-mono font-bold">{report.kitchenConsumption.peel || '-'}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer Signatures Page 1 */}
-        <div className="border-t-2 border-black pt-1.5 flex justify-between items-center text-[10px] font-bold">
-          <div>توقيع الكاشير: <span className="underline mr-2">{report.cashierName || '___________________'}</span></div>
-          <div>ختم واعتماد الإدارة: <span className="underline mr-2">مطعم يحيى البيك</span></div>
-          <div className="font-mono text-gray-500">صفحة 1 من 2 (الوجه الأمامي)</div>
         </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* PAGE 2 (الوجه الثاني - كشف كادر الموظفين الـ 28 وسجل الأقسام) */}
-      {/* ========================================================================= */}
-      <div className="print-page p-3 border-2 border-black rounded-lg min-h-[980px] flex flex-col justify-between">
-        <div>
-          {/* Header Banner Page 2 */}
-          <div className="border-b-2 border-black pb-2 mb-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <AlBaikLogo size="xs" />
-                <div>
-                  <h1 className="text-base font-black text-black">مطعم يحيى البيك - كشف كادر الموظفين</h1>
-                  <h2 className="text-xs font-bold text-gray-800">
-                    سجل الدوام والحضور والسلف واليوميات المحسوبة (28 موظف - الوجه الثاني)
-                  </h2>
-                </div>
-              </div>
-              <div className="text-left border border-black p-1.5 rounded bg-gray-50 text-[11px] font-bold">
-                <div>التاريخ: <span className="font-mono font-black">{report.date}</span> ({report.dayName})</div>
-                <div>إجمالي السلف: <span className="font-mono font-black text-red-700">{formatNumber(summary.totalAdvances)} د.أ</span></div>
-                <div>أجور المياومة: <span className="font-mono font-black text-emerald-800">{formatNumber(totalDailyWages)} د.أ</span></div>
-              </div>
-            </div>
-          </div>
+      {/* Section 2: Expenses & Purchases */}
+      <div className="mb-10 no-break">
+        <h3 className="text-xl font-bold text-[#1e3a5f] border-b-2 border-[#1e3a5f] pb-2 mb-4">المصاريف والمشتريات التفصيلية</h3>
+        
+        <table className="w-full text-sm border-collapse border border-[#dee2e6] text-center">
+          <thead>
+            <tr className="bg-[#f8f9fa]">
+              <th className="py-2.5 px-2 border border-[#dee2e6] text-[#1e3a5f] font-bold text-right">مصاريف إدارية</th>
+              <th className="py-2.5 px-2 border border-[#dee2e6] text-[#1e3a5f] font-bold w-20">المبلغ</th>
+              
+              <th className="py-2.5 px-2 border border-[#dee2e6] text-[#1e3a5f] font-bold text-right">المحفظة الإلكترونية</th>
+              <th className="py-2.5 px-2 border border-[#dee2e6] text-[#1e3a5f] font-bold w-20">المبلغ</th>
+              
+              <th className="py-2.5 px-2 border border-[#dee2e6] text-[#1e3a5f] font-bold text-right">مشتريات (البيان)</th>
+              <th className="py-2.5 px-2 border border-[#dee2e6] text-[#1e3a5f] font-bold w-20">المبلغ</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sec2Rows.length > 0 ? sec2Rows.map((row, idx) => (
+              <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-[#fcfcfc]'}>
+                <td className="py-1.5 px-2 border border-[#dee2e6] text-right">{row.admin?.name || ''}</td>
+                <td className="py-1.5 px-2 border border-[#dee2e6] font-mono">{row.admin?.amount ? formatNumber(row.admin.amount) : '-'}</td>
+                
+                <td className="py-1.5 px-2 border border-[#dee2e6] text-right">{row.wallet?.name || (idx === 0 && !row.wallet ? <span className="text-gray-400">لا توجد مسجلات</span> : '')}</td>
+                <td className="py-1.5 px-2 border border-[#dee2e6] font-mono">{row.wallet?.amount ? formatNumber(row.wallet.amount) : '-'}</td>
+                
+                <td className="py-1.5 px-2 border border-[#dee2e6] text-right">{row.purch?.name || (idx === 0 && !row.purch ? <span className="text-gray-400">لا توجد مسجلات</span> : '')}</td>
+                <td className="py-1.5 px-2 border border-[#dee2e6] font-mono">{row.purch?.amount ? formatNumber(row.purch.amount) : '-'}</td>
+              </tr>
+            )) : (
+              <tr><td colSpan={6} className="py-4 text-gray-500">لا توجد بيانات</td></tr>
+            )}
+          </tbody>
+          <tfoot>
+            <tr className="bg-[#e2e8f0] font-bold">
+              <td className="py-2 px-2 border border-[#dee2e6] text-right">الإجمالي</td>
+              <td className="py-2 px-2 border border-[#dee2e6] font-mono">{formatNumber(summary.totalAdminExpenses)}</td>
+              <td className="py-2 px-2 border border-[#dee2e6] text-right">الإجمالي</td>
+              <td className="py-2 px-2 border border-[#dee2e6] font-mono">{formatNumber(summary.totalWallet)}</td>
+              <td className="py-2 px-2 border border-[#dee2e6] text-right">الإجمالي</td>
+              <td className="py-2 px-2 border border-[#dee2e6] font-mono">{formatNumber(summary.totalPurchases)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
 
-          {/* سجل الأقسام بالأعلى من ورقة المطعم */}
-          <div className="border border-black rounded overflow-hidden mb-2">
-            <div className="bg-gray-800 text-white font-black px-2 py-0.5 text-[10px] flex justify-between">
-              <span>سجل الأقسام ومسؤولي الشفتات (أعلى الورقة الخلفية)</span>
-              <span>دجاج حب: 1 دجاجة 25</span>
-            </div>
-            <table className="w-full text-center text-[9px] border-collapse">
-              <thead className="bg-gray-100 font-bold border-b border-black">
-                <tr>
-                  <th className="p-0.5 border-l border-gray-300 text-right pr-2">القسم</th>
-                  <th className="p-0.5 border-l border-gray-300">مسؤول شفت 1</th>
-                  <th className="p-0.5 border-l border-gray-300">توقيع شفت 1</th>
-                  <th className="p-0.5 border-l border-gray-300">مسؤول شفت 2</th>
-                  <th className="p-0.5">توقيع شفت 2</th>
+      {/* Section 3: Kitchen & Production */}
+      <div className="mb-10 no-break">
+        <h3 className="text-xl font-bold text-[#1e3a5f] border-b-2 border-[#1e3a5f] pb-2 mb-4">الإنتاج واستهلاك المطبخ</h3>
+        
+        <div className="flex gap-6">
+          <div className="flex-1">
+            <table className="w-full text-sm border-collapse border border-[#dee2e6] text-center">
+              <thead>
+                <tr className="bg-[#f8f9fa]">
+                  <th colSpan={4} className="py-2.5 px-4 border border-[#dee2e6] text-[#1e3a5f] font-bold">استهلاك المطبخ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 font-semibold">
-                <tr>
-                  <td className="p-0.5 border-l border-gray-300 text-right pr-2 font-bold bg-gray-50">دجاج حب (1 دجاجة 25)</td>
-                  <td className="p-0.5 border-l border-gray-300">شفت 1</td>
-                  <td className="p-0.5 border-l border-gray-300 font-bold text-emerald-800">موقع ✓</td>
-                  <td className="p-0.5 border-l border-gray-300">-</td>
-                  <td className="p-0.5">-</td>
+              <tbody>
+                <tr className="bg-white">
+                  <td className="py-2 px-2 border border-[#dee2e6] text-right">استهلاك رز:</td>
+                  <td className="py-2 px-2 border border-[#dee2e6] font-mono">{report.kitchenConsumption?.rice1 || '-'}</td>
+                  <td className="py-2 px-2 border border-[#dee2e6] text-right">سيخ 1:</td>
+                  <td className="py-2 px-2 border border-[#dee2e6] font-mono">{report.kitchenConsumption?.rice1 || '-'}</td>
                 </tr>
-                <tr>
-                  <td className="p-0.5 border-l border-gray-300 text-right pr-2 font-bold bg-gray-50">زنجر وسناكات</td>
-                  <td className="p-0.5 border-l border-gray-300">-</td>
-                  <td className="p-0.5 border-l border-gray-300">-</td>
-                  <td className="p-0.5 border-l border-gray-300">-</td>
-                  <td className="p-0.5">-</td>
+                <tr className="bg-[#fcfcfc]">
+                  <td className="py-2 px-2 border border-[#dee2e6] text-right">استهلاك لوز:</td>
+                  <td className="py-2 px-2 border border-[#dee2e6] font-mono">{report.kitchenConsumption?.almonds || '-'}</td>
+                  <td className="py-2 px-2 border border-[#dee2e6] text-right">سيخ 2:</td>
+                  <td className="py-2 px-2 border border-[#dee2e6] font-mono">{report.kitchenConsumption?.rice2 || '-'}</td>
                 </tr>
-                <tr>
-                  <td className="p-0.5 border-l border-gray-300 text-right pr-2 font-bold bg-gray-50">سكالوب وبرجر</td>
-                  <td className="p-0.5 border-l border-gray-300">-</td>
-                  <td className="p-0.5 border-l border-gray-300">-</td>
-                  <td className="p-0.5 border-l border-gray-300">-</td>
-                  <td className="p-0.5">-</td>
+                <tr className="bg-white">
+                  <td className="py-2 px-2 border border-[#dee2e6] text-right">استهلاك بطاطا:</td>
+                  <td className="py-2 px-2 border border-[#dee2e6] font-mono">{report.kitchenConsumption?.potatoes || '-'}</td>
+                  <td className="py-2 px-2 border border-[#dee2e6] text-right">تزويد:</td>
+                  <td className="py-2 px-2 border border-[#dee2e6] font-mono">{report.kitchenConsumption?.supplyIn || '-'}</td>
                 </tr>
-                <tr>
-                  <td className="p-0.5 border-l border-gray-300 text-right pr-2 font-bold bg-gray-50">كولا وشنينة ومبردات</td>
-                  <td className="p-0.5 border-l border-gray-300">مسؤول البرادات</td>
-                  <td className="p-0.5 border-l border-gray-300 font-bold text-emerald-800">موقع ✓</td>
-                  <td className="p-0.5 border-l border-gray-300">-</td>
-                  <td className="p-0.5">-</td>
+                <tr className="bg-[#fcfcfc]">
+                  <td className="py-2 px-2 border border-[#dee2e6] text-right"></td>
+                  <td className="py-2 px-2 border border-[#dee2e6]"></td>
+                  <td className="py-2 px-2 border border-[#dee2e6] text-right">مرتجع:</td>
+                  <td className="py-2 px-2 border border-[#dee2e6] font-mono">{report.kitchenConsumption?.returns || '-'}</td>
                 </tr>
               </tbody>
             </table>
           </div>
-
-          {/* 28 Staff Table Full */}
-          <div className="border border-black rounded overflow-hidden">
-            <table className="w-full text-center text-[9px] border-collapse">
-              <thead className="bg-black text-white font-extrabold border-b border-black">
-                <tr>
-                  <th className="py-1 px-1 border-l border-gray-600 w-6">م</th>
-                  <th className="py-1 px-2 border-l border-gray-600 text-right pr-2 min-w-[110px]">اسم الموظف</th>
-                  <th className="py-1 px-1 border-l border-gray-600 w-14">النوع</th>
-                  <th className="py-1 px-1 border-l border-gray-600 w-12">أجر/س</th>
-                  <th className="py-1 px-1 border-l border-gray-600 w-12">دخول</th>
-                  <th className="py-1 px-1 border-l border-gray-600 w-12">خروج</th>
-                  <th className="py-1 px-1 border-l border-gray-600 w-10">ساعات</th>
-                  <th className="py-1 px-1 border-l border-gray-600 w-16 bg-gray-800 text-emerald-300">اليومية</th>
-                  <th className="py-1 px-1 border-l border-gray-600 w-16 text-yellow-300">السلفة</th>
-                  <th className="py-1 px-1 border-l border-gray-600 min-w-[70px]">ملاحظات</th>
-                  <th className="py-1 px-1 w-14">التوقيع</th>
+          
+          <div className="flex-1">
+            <table className="w-full text-sm border-collapse border border-[#dee2e6] text-center">
+              <thead>
+                <tr className="bg-[#f8f9fa]">
+                  <th colSpan={4} className="py-2.5 px-4 border border-[#dee2e6] text-[#1e3a5f] font-bold">الإنتاج</th>
+                </tr>
+                <tr className="bg-[#f8f9fa] text-xs">
+                  <th className="py-1 px-2 border border-[#dee2e6]"></th>
+                  <th className="py-1 px-2 border border-[#dee2e6]">بروستد</th>
+                  <th className="py-1 px-2 border border-[#dee2e6]">تكا</th>
+                  <th className="py-1 px-2 border border-[#dee2e6]">زنجر</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-300 font-semibold">
-                {report.employees.map((emp, index) => {
-                  const isDaily = (emp.employmentType || 'daily') === 'daily';
-                  const hours = emp.hoursWorked ?? calculateShiftHours(emp.shiftIn, emp.shiftOut);
-                  const wage = isDaily ? (emp.calculatedWage ?? computeHourlyWage(hours, emp.hourlyRate || 1.5, 'daily')) : 0;
-
-                  return (
-                    <tr key={emp.id || index} className={index % 2 === 1 ? 'bg-gray-50/70' : 'bg-white'}>
-                      <td className="py-0.5 px-0.5 border-l border-gray-300 font-mono font-bold">{emp.number || index + 1}</td>
-                      <td className="py-0.5 px-2 border-l border-gray-300 text-right pr-2 font-black text-black truncate max-w-[120px]">
-                        {emp.name}
-                      </td>
-                      <td className="py-0.5 px-0.5 border-l border-gray-300 font-bold">
-                        <span className={`px-1 rounded text-[8.5px] ${isDaily ? 'bg-amber-100 text-amber-950' : 'bg-indigo-100 text-indigo-950'}`}>
-                          {isDaily ? 'مياومة' : 'شهري'}
-                        </span>
-                      </td>
-                      <td className="py-0.5 px-0.5 border-l border-gray-300 font-mono">
-                        {isDaily ? `${emp.hourlyRate || 1.5}` : '-'}
-                      </td>
-                      <td className="py-0.5 px-0.5 border-l border-gray-300 font-mono">{emp.shiftIn || '-'}</td>
-                      <td className="py-0.5 px-0.5 border-l border-gray-300 font-mono">{emp.shiftOut || '-'}</td>
-                      <td className="py-0.5 px-0.5 border-l border-gray-300 font-mono font-bold">
-                        {hours > 0 ? `${hours}س` : '-'}
-                      </td>
-                      <td className="py-0.5 px-0.5 border-l border-gray-300 font-mono font-black text-emerald-900 bg-emerald-50/40">
-                        {isDaily ? (wage > 0 ? formatNumber(wage) : '0.00') : 'شهري'}
-                      </td>
-                      <td className="py-0.5 px-0.5 border-l border-gray-300 font-mono font-black text-red-700">
-                        {emp.advance > 0 ? formatNumber(emp.advance) : '-'}
-                      </td>
-                      <td className="py-0.5 px-1 border-l border-gray-300 text-right pr-1 text-gray-700 truncate max-w-[80px]">
-                        {emp.notes || '-'}
-                      </td>
-                      <td className="py-0.5 px-0.5 text-center font-bold">
-                        {emp.signed ? (
-                          <span className="text-emerald-800 font-black text-[9px]">موقع ✓</span>
-                        ) : (
-                          <span className="text-gray-400 text-[8.5px]">-</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-              <tfoot className="bg-black text-white font-extrabold border-t-2 border-black text-[9.5px]">
-                <tr>
-                  <td colSpan={3} className="py-1 px-2 text-right">المجموع الكلي لكادر الموظفين:</td>
-                  <td colSpan={3} className="py-1 px-1 text-center font-mono text-gray-300">
-                    مجموع الساعات: {totalStaffHours} ساعة
-                  </td>
-                  <td className="py-1 px-1 text-center font-mono text-yellow-300 font-black">
-                    {totalStaffHours}س
-                  </td>
-                  <td className="py-1 px-1 font-mono text-emerald-300 font-black">
-                    {formatNumber(totalDailyWages)} د.أ
-                  </td>
-                  <td className="py-1 px-1 font-mono text-yellow-400 font-black">
-                    {formatNumber(summary.totalAdvances)} د.أ
-                  </td>
-                  <td colSpan={2} className="py-1 px-2 text-left text-gray-300 text-[8.5px]">
-                    سلف ويوميات مستلمة
-                  </td>
+              <tbody>
+                <tr className="bg-white">
+                  <td className="py-2 px-2 border border-[#dee2e6] font-bold text-right">الشفت الأول</td>
+                  <td className="py-2 px-2 border border-[#dee2e6] font-mono">{report.productionItems?.find(p => p.name === 'بروستد')?.shift1 || '-'}</td>
+                  <td className="py-2 px-2 border border-[#dee2e6] font-mono">{report.productionItems?.find(p => p.name === 'تكا')?.shift1 || '-'}</td>
+                  <td className="py-2 px-2 border border-[#dee2e6] font-mono">{report.productionItems?.find(p => p.name === 'زنجر')?.shift1 || '-'}</td>
                 </tr>
-              </tfoot>
+                <tr className="bg-[#fcfcfc]">
+                  <td className="py-2 px-2 border border-[#dee2e6] font-bold text-right">الشفت الثاني</td>
+                  <td className="py-2 px-2 border border-[#dee2e6] font-mono">{report.productionItems?.find(p => p.name === 'بروستد')?.shift2 || '-'}</td>
+                  <td className="py-2 px-2 border border-[#dee2e6] font-mono">{report.productionItems?.find(p => p.name === 'تكا')?.shift2 || '-'}</td>
+                  <td className="py-2 px-2 border border-[#dee2e6] font-mono">{report.productionItems?.find(p => p.name === 'زنجر')?.shift2 || '-'}</td>
+                </tr>
+                <tr className="bg-white font-bold bg-[#e2e8f0]">
+                  <td className="py-2 px-2 border border-[#dee2e6] text-right">المجموع</td>
+                  <td className="py-2 px-2 border border-[#dee2e6] font-mono">{report.productionItems?.find(p => p.name === 'بروستد')?.total || '-'}</td>
+                  <td className="py-2 px-2 border border-[#dee2e6] font-mono">{report.productionItems?.find(p => p.name === 'تكا')?.total || '-'}</td>
+                  <td className="py-2 px-2 border border-[#dee2e6] font-mono">{report.productionItems?.find(p => p.name === 'زنجر')?.total || '-'}</td>
+                </tr>
+              </tbody>
             </table>
           </div>
         </div>
+      </div>
 
-        {/* Footer Signatures Page 2 */}
-        <div className="border-t-2 border-black pt-1.5 flex justify-between items-center text-[10px] font-bold">
-          <div>توقيع الكاشير والمسؤول: <span className="underline mr-2">{report.cashierName || '___________________'}</span></div>
-          <div>مصادقة المدير العام: <span className="underline mr-2">مطعم يحيى البيك</span></div>
-          <div className="font-mono text-gray-500">صفحة 2 من 2 (الوجه الخلفي)</div>
+      {/* Section 4: Custody Claims */}
+      <div className="mb-10 no-break">
+        <h3 className="text-xl font-bold text-[#1e3a5f] border-b-2 border-[#1e3a5f] pb-2 mb-4">جدول العُهد</h3>
+        
+        <table className="w-full text-sm border-collapse border border-[#dee2e6] text-center">
+          <thead>
+            <tr className="bg-[#f8f9fa]">
+              <th className="py-2.5 px-4 border border-[#dee2e6] text-[#1e3a5f] font-bold w-12">م</th>
+              <th className="py-2.5 px-4 border border-[#dee2e6] text-[#1e3a5f] font-bold text-right">البيان (صاحب العهدة)</th>
+              <th className="py-2.5 px-4 border border-[#dee2e6] text-[#1e3a5f] font-bold w-32">له</th>
+              <th className="py-2.5 px-4 border border-[#dee2e6] text-[#1e3a5f] font-bold w-32">عليه</th>
+              <th className="py-2.5 px-4 border border-[#dee2e6] text-[#1e3a5f] font-bold">ملاحظات</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(report.custodyClaims || [
+              { id: '1', person: '', forThem: 0, onThem: 0, notes: '' },
+              { id: '2', person: '', forThem: 0, onThem: 0, notes: '' },
+              { id: '3', person: '', forThem: 0, onThem: 0, notes: '' },
+              { id: '4', person: '', forThem: 0, onThem: 0, notes: '' }
+            ]).slice(0, 4).map((c, idx) => (
+              <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-[#f8f9fa]'}>
+                <td className="py-2 px-2 border border-[#dee2e6] font-bold">{idx + 1}</td>
+                <td className="py-2 px-4 border border-[#dee2e6] text-right font-bold">{c.person}</td>
+                <td className="py-2 px-4 border border-[#dee2e6] font-mono text-emerald-700 bg-emerald-50/30">{c.forThem > 0 ? formatNumber(c.forThem) : '-'}</td>
+                <td className="py-2 px-4 border border-[#dee2e6] font-mono text-rose-700 bg-rose-50/30">{c.onThem > 0 ? formatNumber(c.onThem) : '-'}</td>
+                <td className="py-2 px-4 border border-[#dee2e6] text-gray-500 text-xs">{c.notes || '-'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* PAGE 2: Staff Records */}
+      <div className="page-break w-full pt-8">
+        <div className="bg-[#1e3a5f] text-white rounded-t-lg text-center py-4 mb-6 mt-4">
+          <h1 className="text-2xl font-black mb-1">سجل حركة الموظفين ومحاسبة المياومة</h1>
+        </div>
+        
+        <table className="w-full text-[11px] border-collapse border border-[#dee2e6] text-center">
+          <thead>
+            <tr className="bg-[#f8f9fa]">
+              <th className="py-2 px-1 border border-[#dee2e6] text-[#1e3a5f] font-bold">م</th>
+              <th className="py-2 px-2 border border-[#dee2e6] text-[#1e3a5f] font-bold text-right w-24">اسم الموظف</th>
+              <th className="py-2 px-2 border border-[#dee2e6] text-[#1e3a5f] font-bold">دخول</th>
+              <th className="py-2 px-2 border border-[#dee2e6] text-[#1e3a5f] font-bold">خروج</th>
+              <th className="py-2 px-2 border border-[#dee2e6] text-[#1e3a5f] font-bold">ساعات</th>
+              <th className="py-2 px-2 border border-[#dee2e6] text-[#1e3a5f] font-bold">النوع</th>
+              <th className="py-2 px-2 border border-[#dee2e6] text-[#1e3a5f] font-bold">أجر/س</th>
+              <th className="py-2 px-2 border border-[#dee2e6] text-[#1e3a5f] font-bold">اليومية</th>
+              <th className="py-2 px-2 border border-[#dee2e6] text-[#1e3a5f] font-bold">السلفة</th>
+              <th className="py-2 px-2 border border-[#dee2e6] text-[#1e3a5f] font-bold w-24">ملاحظات</th>
+              <th className="py-2 px-2 border border-[#dee2e6] text-[#1e3a5f] font-bold">التوقيع</th>
+            </tr>
+          </thead>
+          <tbody>
+            {report.employees.map((emp, idx) => {
+              const isDaily = (emp.employmentType || 'daily') === 'daily';
+              const hours = emp.hoursWorked ?? calculateShiftHours(emp.shiftIn, emp.shiftOut);
+              const wage = isDaily ? (emp.calculatedWage ?? computeHourlyWage(hours, emp.hourlyRate || 1.5, 'daily')) : 0;
+              return (
+                <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-[#f8f9fa]'}>
+                  <td className="py-1.5 px-1 border border-[#dee2e6] font-bold">{idx + 1}</td>
+                  <td className="py-1.5 px-2 border border-[#dee2e6] text-right font-bold">{emp.name}</td>
+                  <td className="py-1.5 px-2 border border-[#dee2e6] font-mono">{emp.shiftIn || '-'}</td>
+                  <td className="py-1.5 px-2 border border-[#dee2e6] font-mono">{emp.shiftOut || '-'}</td>
+                  <td className="py-1.5 px-2 border border-[#dee2e6] font-bold font-mono">{hours > 0 ? hours : '-'}</td>
+                  <td className="py-1.5 px-2 border border-[#dee2e6] text-[10px]">{isDaily ? 'مياومة' : 'شهري'}</td>
+                  <td className="py-1.5 px-2 border border-[#dee2e6] font-mono">{isDaily ? emp.hourlyRate || 1.5 : '-'}</td>
+                  <td className="py-1.5 px-2 border border-[#dee2e6] font-bold font-mono bg-[#f0fdf4]">{isDaily ? formatNumber(wage) : 'شهري'}</td>
+                  <td className="py-1.5 px-2 border border-[#dee2e6] font-mono font-bold">{emp.advance > 0 ? formatNumber(emp.advance) : '-'}</td>
+                  <td className="py-1.5 px-2 border border-[#dee2e6] text-gray-500 text-[10px] text-right">{emp.notes || '-'}</td>
+                  <td className="py-1.5 px-2 border border-[#dee2e6]">{emp.signed ? 'موقع ✓' : ''}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr className="bg-[#e2e8f0] font-bold">
+              <td colSpan={8} className="py-2 px-2 border border-[#dee2e6] text-right">إجمالي السلف</td>
+              <td className="py-2 px-2 border border-[#dee2e6] font-mono">{formatNumber(summary.totalAdvances)}</td>
+              <td colSpan={2} className="py-2 px-2 border border-[#dee2e6]"></td>
+            </tr>
+          </tfoot>
+        </table>
+        
+        <div className="mt-8 flex justify-between font-bold text-sm px-8">
+          <div>توقيع الكاشير: ____________________</div>
+          <div>اعتماد الإدارة: ____________________</div>
         </div>
       </div>
+      
     </div>
   );
 };

@@ -32,7 +32,8 @@ export const UnifiedReportView: React.FC<UnifiedReportViewProps> = ({ report, su
   const custodyList = report.custodyClaims || [
     { id: 'cust_1', person: 'عهدة 1', forThem: 0, onThem: 0, notes: '' },
     { id: 'cust_2', person: 'عهدة 2', forThem: 0, onThem: 0, notes: '' },
-    { id: 'cust_3', person: 'عهدة 3', forThem: 0, onThem: 0, notes: '' }
+    { id: 'cust_3', person: 'عهدة 3', forThem: 0, onThem: 0, notes: '' },
+    { id: 'cust_4', person: 'عهدة 4', forThem: 0, onThem: 0, notes: '' }
   ];
 
   const totalCustodyForThem = custodyList.reduce((sum, c) => sum + (Number(c.forThem) || 0), 0);
@@ -290,7 +291,7 @@ export const UnifiedReportView: React.FC<UnifiedReportViewProps> = ({ report, su
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {custodyList.slice(0, 3).map((item, idx) => (
+              {custodyList.slice(0, 4).map((item, idx) => (
                 <tr key={item.id || idx}>
                   <td className="p-2 text-center text-slate-500 font-mono">{idx + 1}</td>
                   <td className="p-2 font-semibold text-slate-900">{item.person || `عهدة ${idx + 1}`}</td>
