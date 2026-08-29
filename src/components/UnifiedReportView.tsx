@@ -36,23 +36,47 @@ export const UnifiedReportView: React.FC<UnifiedReportViewProps> = ({ report, su
 
   const handleDownloadImage = async () => {
     const element = document.getElementById('unified-report-view');
-    if (!element) return;
+    if (!element) {
+      alert('لم يتم العثور على عنصر التقرير.');
+      return;
+    }
     try {
       setIsExportingImage(true);
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
+        allowTaint: true,
         backgroundColor: '#ffffff',
         ignoreElements: (el) => el.classList.contains('print:hidden'),
       });
-      const image = canvas.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = image;
-      a.download = `تقرير_إغلاق_يحيى_البيك_${report.date}_${report.dayName}.png`;
-      a.click();
+      
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          throw new Error('فشل توليد صورة التقرير');
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `تقرير_إغلاق_يحيى_البيك_${report.date || 'اليوم'}_${report.dayName || 'تقرير'}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 'image/png');
     } catch (err) {
       console.error('Failed to export image:', err);
-      alert('حدث خطأ أثناء تصدير الصورة، يرجى المحاولة مرة أخرى.');
+      // Fallback to dataURL if blob creation fails
+      try {
+        const canvas = await html2canvas(element, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff', ignoreElements: (el) => el.classList.contains('print:hidden') });
+        const image = canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = image;
+        a.download = `تقرير_إغلاق_يحيى_البيك_${report.date || 'اليوم'}_${report.dayName || 'تقرير'}.png`;
+        a.click();
+      } catch (innerErr) {
+        console.error('Fallback failed:', innerErr);
+        alert('حدث خطأ أثناء تنزيل الصورة. يمكنك استخدام خطب الطباعة (PDF) كبديل فوري.');
+      }
     } finally {
       setIsExportingImage(false);
     }
