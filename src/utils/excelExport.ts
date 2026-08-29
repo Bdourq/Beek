@@ -40,12 +40,13 @@ export const exportDailyReportToExcel = async (report: DailyReport) => {
     views: [{ rightToLeft: true }]
   });
 
-  // Columns for the PDF Layout
-  // A: بيانات الكاش والمبيعات | B: المبلغ || C: Spacer || D: ملخص الجرد الفعلي | E: المبلغ
+  // Columns: A, B (Left stacked tables), C (Spacer), D, E (Right summary tables)
   worksheet.columns = [
-    { key: 'A', width: 25 }, { key: 'B', width: 15 },
-    { key: 'C', width: 4 },  // spacer
-    { key: 'D', width: 25 }, { key: 'E', width: 15 }
+    { key: 'A', width: 28 }, // البيان (left tables)
+    { key: 'B', width: 14 }, // المبلغ (left tables)
+    { key: 'C', width: 4 },  // Spacer
+    { key: 'D', width: 28 }, // بيانات الكاش / الجرد
+    { key: 'E', width: 14 }  // القيمة
   ];
 
   const applyStyle = (cell: ExcelJS.Cell, bold = false, align: 'center' | 'left' | 'right' = 'center', bgColor?: string, border = true) => {
@@ -66,303 +67,230 @@ export const exportDailyReportToExcel = async (report: DailyReport) => {
     }
   };
 
-  // 1. Header Area
-  const titleRow = worksheet.addRow(['مطعم يحيى البيك']);
+  // 1. Top Banner (Across A to E)
   worksheet.mergeCells('A1:E1');
-  applyStyle(worksheet.getCell('A1'), true, 'center', '1e3a5f', false);
-  worksheet.getCell('A1').font = { size: 18, bold: true, color: { argb: 'FFFFFFFF' } };
+  const titleCell = worksheet.getCell('A1');
+  titleCell.value = 'مطعم يحيى البيك - تقرير إغلاق الكاش اليومي الشامل';
+  applyStyle(titleCell, true, 'center', '1e3a5f', false);
+  titleCell.font = { size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
 
-  const subTitleRow = worksheet.addRow(['تقرير إغلاق الكاش اليومي الشامل']);
-  worksheet.mergeCells('A2:E2');
-  applyStyle(worksheet.getCell('A2'), false, 'center', '1e3a5f', false);
-  worksheet.getCell('A2').font = { size: 12, color: { argb: 'FFFFFFFF' } };
+  worksheet.addRow([]); // Row 2
 
-  worksheet.addRow([]); // Spacer
-
-  const dateRow = worksheet.addRow(['اليوم:', report.dayName, '', 'التاريخ:', report.date]);
-  applyStyle(worksheet.getCell(`A${dateRow.number}`), true, 'right', 'FFF8F9FA', true);
-  applyStyle(worksheet.getCell(`B${dateRow.number}`), false, 'right', 'FFF8F9FA', true);
+  // Date & Day Row
+  const dateRow = worksheet.addRow(['', '', '', `التاريخ: ${report.date}`, `اليوم: ${report.dayName}`]);
   applyStyle(worksheet.getCell(`D${dateRow.number}`), true, 'right', 'FFF8F9FA', true);
-  applyStyle(worksheet.getCell(`E${dateRow.number}`), false, 'right', 'FFF8F9FA', true);
+  applyStyle(worksheet.getCell(`E${dateRow.number}`), true, 'center', 'FFF8F9FA', true);
 
-  worksheet.addRow([]); // Spacer
+  worksheet.addRow([]); // Row 4 spacer
 
-  // 2. Section 1
-  const sec1Row = worksheet.addRow(['1. بيانات الكاش والمبيعات وملخص الجرد']);
-  worksheet.mergeCells(`A${sec1Row.number}:E${sec1Row.number}`);
-  applyStyle(worksheet.getCell(`A${sec1Row.number}`), true, 'right', undefined, false);
-  worksheet.getCell(`A${sec1Row.number}`).font = { size: 14, bold: true, color: { argb: 'FF1E3A5F' } };
+  // ==========================================
+  // RIGHT SIDE: Section 1 & Section 2 Summary
+  // ==========================================
+  const writeRightSummary = () => {
+    let rIdx = 5;
 
-  const sec1Headers = worksheet.addRow(['بيانات الكاش والمبيعات', '', '', 'ملخص الجرد الفعلي', '']);
-  worksheet.mergeCells(`A${sec1Headers.number}:B${sec1Headers.number}`);
-  worksheet.mergeCells(`D${sec1Headers.number}:E${sec1Headers.number}`);
-  applyStyle(worksheet.getCell(`A${sec1Headers.number}`), true, 'center', 'FFF8F9FA');
-  applyStyle(worksheet.getCell(`D${sec1Headers.number}`), true, 'center', 'FFF8F9FA');
+    // Cash Section Header
+    worksheet.mergeCells(`D${rIdx}:E${rIdx}`);
+    const cHead = worksheet.getCell(`D${rIdx}`);
+    cHead.value = 'بيانات الكاش والمبيعات';
+    applyStyle(cHead, true, 'center', 'FFF8F9FA');
+    rIdx++;
 
-  const cashArr = [
-    { l: 'النقد الافتتاحي', v: report.openingCash },
-    { l: 'اضافة ذمم', v: summary.totalVendorDebtsAdded },
-    { l: 'تسديد ذمم قديمة', v: summary.totalVendorDebtsPaid },
-    { l: 'مبيعات', v: report.sales },
-    { l: 'مبيعات أخرى', v: report.otherSales },
-    { l: 'مجموع الكاش', v: summary.totalGrossCashAvailable, h: true }
-  ];
+    const cashArr = [
+      { l: 'النقد الافتتاحي', v: report.openingCash },
+      { l: 'اضافة ذمم', v: summary.totalVendorDebtsAdded },
+      { l: 'تسديد ذمم قديمة', v: summary.totalVendorDebtsPaid },
+      { l: 'مبيعات', v: report.sales },
+      { l: 'مبيعات أخرى', v: report.otherSales },
+      { l: 'مجموع الكاش', v: summary.totalGrossCashAvailable, h: true }
+    ];
 
-  const invArr = [
-    { l: 'نقد (الكاش الفعلي)', v: report.actualCashInDrawer },
-    { l: 'فيزا', v: report.visaPOS },
-    { l: 'Rt', v: report.rtPOS },
-    { l: 'مايسترو', v: report.maestroPOS },
-    { l: 'فرق سعر', v: report.priceDiff },
-    { l: 'سلف', v: summary.totalAdvances },
-    { l: 'المحفظة', v: summary.totalWallet },
-    { l: 'مشتريات', v: summary.totalPurchases },
-    { l: 'سداد ذمم تجار', v: summary.totalVendorDebtsPaid },
-    { l: 'مصاريف أخرى', v: summary.totalOtherExpenses },
-    { l: 'الشقة', v: summary.totalApartmentExpenses },
-    { l: 'مصاريف إدارية', v: summary.totalAdminExpenses },
-    { l: 'يحيى', v: summary.totalYahya },
-    { l: 'أبو عبدالله', v: summary.totalAbuAbdullah },
-    { l: 'بهارات', v: summary.totalSpices },
-    { l: 'معدات وصيانة', v: summary.totalMaintenance },
-    { l: 'مجموع الجرد', v: summary.totalReconciledInventory, h: true },
-    { l: 'نقص الكاش', v: summary.differenceType === 'shortage' ? summary.cashDifference : 0, h: true, c: 'FFFFF0F5' },
-    { l: 'زيادة الكاش', v: summary.differenceType === 'surplus' ? summary.cashDifference : 0, h: true, c: 'FFF0FDF4' }
-  ];
+    cashArr.forEach(item => {
+      worksheet.getCell(`D${rIdx}`).value = item.l;
+      worksheet.getCell(`E${rIdx}`).value = item.v !== undefined && item.v !== null && item.v !== 0 ? item.v : '-';
+      applyStyle(worksheet.getCell(`D${rIdx}`), item.h, 'right', item.h ? 'FFE2E8F0' : undefined);
+      applyStyle(worksheet.getCell(`E${rIdx}`), item.h, 'center', item.h ? 'FFE2E8F0' : undefined);
+      rIdx++;
+    });
 
-  const maxSec1 = Math.max(cashArr.length, invArr.length);
-  for (let i = 0; i < maxSec1; i++) {
-    const cash: any = cashArr[i] || { l: '', v: '' };
-    const inv: any = invArr[i] || { l: '', v: '' };
-    
-    const r = worksheet.addRow([
-      cash.l, cash.v !== '' && cash.v !== 0 ? cash.v : (cash.l ? '-' : ''), '',
-      inv.l, inv.v !== '' && inv.v !== 0 ? inv.v : (inv.l ? '-' : '')
-    ]);
+    rIdx++; // Spacer
 
-    if (cash.l) {
-      applyStyle(r.getCell('A'), cash.h, 'right', cash.h ? 'FFE2E8F0' : undefined);
-      applyStyle(r.getCell('B'), cash.h, 'center', cash.h ? 'FFE2E8F0' : undefined);
+    // Inventory Section Header
+    worksheet.mergeCells(`D${rIdx}:E${rIdx}`);
+    const iHead = worksheet.getCell(`D${rIdx}`);
+    iHead.value = 'ملخص الجرد الفعلي';
+    applyStyle(iHead, true, 'center', 'FFF8F9FA');
+    rIdx++;
+
+    const invArr = [
+      { l: 'نقد (الكاش الفعلي)', v: report.actualCashInDrawer },
+      { l: 'فيزا', v: report.visaPOS },
+      { l: 'Rt', v: report.rtPOS },
+      { l: 'مايسترو', v: report.maestroPOS },
+      { l: 'فرق سعر', v: report.priceDiff },
+      { l: 'سلف', v: summary.totalAdvances },
+      { l: 'المحفظة', v: summary.totalWallet },
+      { l: 'مشتريات', v: summary.totalPurchases },
+      { l: 'سداد ذمم تجار', v: summary.totalVendorDebtsPaid },
+      { l: 'مصاريف أخرى', v: summary.totalOtherExpenses },
+      { l: 'الشقة', v: summary.totalApartmentExpenses },
+      { l: 'مصاريف إدارية', v: summary.totalAdminExpenses },
+      { l: 'يحيى', v: summary.totalYahya },
+      { l: 'أبو عبدالله', v: summary.totalAbuAbdullah },
+      { l: 'بهارات', v: summary.totalSpices },
+      { l: 'معدات وصيانة', v: summary.totalMaintenance },
+      { l: 'مجموع الجرد', v: summary.totalReconciledInventory, h: true },
+      { l: 'نقص الكاش', v: summary.differenceType === 'shortage' ? summary.cashDifference : 0, h: true, c: 'FFFFF0F5' },
+      { l: 'زيادة الكاش', v: summary.differenceType === 'surplus' ? summary.cashDifference : 0, h: true, c: 'FFF0FDF4' }
+    ];
+
+    invArr.forEach(item => {
+      const bg = item.c || (item.h ? 'FFE2E8F0' : undefined);
+      worksheet.getCell(`D${rIdx}`).value = item.l;
+      worksheet.getCell(`E${rIdx}`).value = item.v !== undefined && item.v !== null && item.v !== 0 ? item.v : '-';
+      applyStyle(worksheet.getCell(`D${rIdx}`), item.h, 'right', bg);
+      applyStyle(worksheet.getCell(`E${rIdx}`), item.h, 'center', bg);
+      rIdx++;
+    });
+  };
+
+  writeRightSummary();
+
+  // ==========================================
+  // LEFT SIDE: Stacked Tables in Columns A & B
+  // ==========================================
+  const writeMiniTable = (
+    title: string,
+    items: { name: string; amount: number }[],
+    totalAmount: number,
+    startRow: number
+  ): number => {
+    worksheet.mergeCells(`A${startRow}:B${startRow}`);
+    const tCell = worksheet.getCell(`A${startRow}`);
+    tCell.value = title;
+    applyStyle(tCell, true, 'center', '1e3a5f');
+
+    const subR = startRow + 1;
+    worksheet.getCell(`A${subR}`).value = 'البيان';
+    worksheet.getCell(`B${subR}`).value = 'المبلغ';
+    applyStyle(worksheet.getCell(`A${subR}`), true, 'center', 'FFF8F9FA');
+    applyStyle(worksheet.getCell(`B${subR}`), true, 'center', 'FFF8F9FA');
+
+    let curR = subR + 1;
+    if (items.length === 0) {
+      worksheet.getCell(`A${curR}`).value = 'لا توجد مسجلات';
+      worksheet.getCell(`B${curR}`).value = '-';
+      applyStyle(worksheet.getCell(`A${curR}`), false, 'right');
+      applyStyle(worksheet.getCell(`B${curR}`), false, 'center');
+      curR++;
+    } else {
+      items.forEach(it => {
+        worksheet.getCell(`A${curR}`).value = it.name || '';
+        worksheet.getCell(`B${curR}`).value = it.amount ? it.amount : '-';
+        applyStyle(worksheet.getCell(`A${curR}`), false, 'right');
+        applyStyle(worksheet.getCell(`B${curR}`), false, 'center');
+        curR++;
+      });
     }
-    if (inv.l) {
-      const bgColor = inv.c || (inv.h ? 'FFE2E8F0' : undefined);
-      applyStyle(r.getCell('D'), inv.h, 'right', bgColor);
-      applyStyle(r.getCell('E'), inv.h, 'center', bgColor);
-    }
-  }
 
-  worksheet.addRow([]); // Spacer
+    worksheet.getCell(`A${curR}`).value = 'الإجمالي';
+    worksheet.getCell(`B${curR}`).value = totalAmount ? totalAmount : 0;
+    applyStyle(worksheet.getCell(`A${curR}`), true, 'right', 'FFE2E8F0');
+    applyStyle(worksheet.getCell(`B${curR}`), true, 'center', 'FFE2E8F0');
 
-  // 3. Section 2
-  const sec2Row = worksheet.addRow(['المصاريف والمشتريات التفصيلية']);
-  worksheet.mergeCells(`A${sec2Row.number}:E${sec2Row.number}`);
-  applyStyle(worksheet.getCell(`A${sec2Row.number}`), true, 'right', undefined, false);
-  worksheet.getCell(`A${sec2Row.number}`).font = { size: 14, bold: true, color: { argb: 'FF1E3A5F' } };
+    return curR + 2; // Next table start row
+  };
 
-  // Adjust columns for 3 sections side-by-side
-  worksheet.getColumn('F').width = 15;
+  let leftRow = 5;
 
-  const sec2Headers = worksheet.addRow([
-    'مصاريف إدارية', 'المبلغ',
-    'المحفظة الإلكترونية', 'المبلغ',
-    'مشتريات (البيان)', 'المبلغ'
-  ]);
-  ['A','B','C','D','E','F'].forEach(col => applyStyle(sec2Headers.getCell(col), true, 'center', 'FFF8F9FA'));
+  // 1. إضافة ذمم تجار
+  const vAddedItems = report.vendorDebtsAdded.map(v => ({ name: v.vendorName, amount: v.amount }));
+  leftRow = writeMiniTable('إضافة ذمم تجار', vAddedItems, summary.totalVendorDebtsAdded, leftRow);
 
+  // 2. سداد ذمم تجار
+  const vPaidItems = report.vendorDebtsPaid.map(v => ({ name: v.vendorName, amount: v.amount }));
+  leftRow = writeMiniTable('سداد ذمم تجار', vPaidItems, summary.totalVendorDebtsPaid, leftRow);
+
+  // 3. مصاريف أخرى
+  const otherExpItems = report.otherExpenses.map(e => ({ name: e.name, amount: e.amount }));
+  leftRow = writeMiniTable('مصاريف أخرى', otherExpItems, summary.totalOtherExpenses, leftRow);
+
+  // 4. الشقة
+  const aptItems = report.apartmentExpenses.map(e => ({ name: e.name, amount: e.amount }));
+  leftRow = writeMiniTable('الشقة', aptItems, summary.totalApartmentExpenses, leftRow);
+
+  // 5. يحيى
+  const yahyaItems = report.yahyaAccount.map(e => ({ name: e.name, amount: e.amount }));
+  leftRow = writeMiniTable('يحيى', yahyaItems, summary.totalYahya, leftRow);
+
+  // 6. أبو عبدالله
+  const abuItems = report.abuAbdullahAccount.map(e => ({ name: e.name, amount: e.amount }));
+  leftRow = writeMiniTable('أبو عبدالله', abuItems, summary.totalAbuAbdullah, leftRow);
+
+  // 7. مصاريف إدارية
   const adminPredefined = ['ضمان', 'كهرباء', 'فاتورة نت', 'فاتورة اتصال', 'ضيافة', 'دعاية', 'قرطاسية'];
-  const adminExpList = adminPredefined.map(name => {
+  const adminList = adminPredefined.map(name => {
     const found = report.adminExpenses.find(a => a.name.includes(name) || name.includes(a.name));
-    return { n: name, v: found?.amount || '' };
+    return { name, amount: found?.amount || 0 };
   });
   const otherAdmin = report.adminExpenses.filter(a => !adminPredefined.some(p => a.name.includes(p) || p.includes(a.name)));
-  const allAdmin = [...adminExpList, ...otherAdmin.map(a => ({ n: a.name, v: a.amount }))];
+  const allAdminItems = [...adminList, ...otherAdmin.map(a => ({ name: a.name, amount: a.amount }))];
+  leftRow = writeMiniTable('مصاريف إدارية', allAdminItems, summary.totalAdminExpenses, leftRow);
 
-  const maxSec2 = Math.max(report.purchases.length || 1, report.walletExpenses.length || 1, allAdmin.length || 1);
-  
-  for (let i = 0; i < maxSec2; i++) {
-    const adm = allAdmin[i] || { n: '', v: '' };
-    const wal = report.walletExpenses[i] || { name: i===0 && report.walletExpenses.length===0 ? 'لا توجد مسجلات' : '', amount: '' };
-    const pur = report.purchases[i] || { name: i===0 && report.purchases.length===0 ? 'لا توجد مسجلات' : '', amount: '' };
-    
-    const r = worksheet.addRow([
-      adm.n, adm.v, wal.name, wal.amount, pur.name, pur.amount
-    ]);
-    ['A','C','E'].forEach(col => applyStyle(r.getCell(col), false, 'right'));
-    ['B','D','F'].forEach(col => applyStyle(r.getCell(col), false, 'center'));
-  }
+  // 8. بهارات
+  const spicesItems = report.spices.map(s => ({ name: s.name, amount: s.amount }));
+  leftRow = writeMiniTable('بهارات', spicesItems, summary.totalSpices, leftRow);
 
-  const sec2Footer = worksheet.addRow([
-    'الإجمالي', summary.totalAdminExpenses,
-    'الإجمالي', summary.totalWallet,
-    'الإجمالي', summary.totalPurchases
-  ]);
-  ['A','C','E'].forEach(col => applyStyle(sec2Footer.getCell(col), true, 'right', 'FFE2E8F0'));
-  ['B','D','F'].forEach(col => applyStyle(sec2Footer.getCell(col), true, 'center', 'FFE2E8F0'));
+  // 9. معدات وصيانة
+  const maintItems = report.maintenance.map(m => ({ name: m.name, amount: m.amount }));
+  leftRow = writeMiniTable('معدات وصيانة', maintItems, summary.totalMaintenance, leftRow);
+
+  // 10. مشتريات
+  const purchItems = report.purchases.map(p => ({ name: p.name, amount: p.amount }));
+  leftRow = writeMiniTable('مشتريات', purchItems, summary.totalPurchases, leftRow);
+
+  // 11. المحفظة الإلكترونية
+  const walletItems = report.walletExpenses.map(w => ({ name: w.name, amount: w.amount }));
+  leftRow = writeMiniTable('المحفظة الإلكترونية', walletItems, summary.totalWallet, leftRow);
 
   worksheet.addRow([]); // Spacer
 
-  // 4. Section 3 (Kitchen & Production Tables) - Placed beside each other
-  worksheet.addRow([]); // Spacer
-  const sec3Row = worksheet.addRow(['الإنتاج واستهلاك المطبخ']);
-  worksheet.mergeCells(`A${sec3Row.number}:F${sec3Row.number}`);
-  applyStyle(worksheet.getCell(`A${sec3Row.number}`), true, 'right', undefined, false);
-  worksheet.getCell(`A${sec3Row.number}`).font = { size: 14, bold: true, color: { argb: 'FF1E3A5F' } };
+  // ==========================================
+  // BOTTOM: Employee Advances Table
+  // ==========================================
+  const empStartRow = Math.max(leftRow, 32) + 2;
+  worksheet.mergeCells(`A${empStartRow}:D${empStartRow}`);
+  const empTitle = worksheet.getCell(`A${empStartRow}`);
+  empTitle.value = 'سجل سلف الموظفين اليومية';
+  applyStyle(empTitle, true, 'center', '1e3a5f');
 
-  // Kitchen Consumption Table
-  const kArr = [
-    { labelR: 'سيخ 1', valR: report.kitchenConsumption?.rice1 || '', labelL: 'استهلاك رز', valL: '' },
-    { labelR: 'سيخ 2', valR: report.kitchenConsumption?.rice2 || '', labelL: 'استهلاك لوز', valL: report.kitchenConsumption?.almonds || '' },
-    { labelR: 'تزويد', valR: report.kitchenConsumption?.supplyIn || '', labelL: 'استهلاك بطاطا', valL: report.kitchenConsumption?.potatoes || '' },
-    { labelR: 'مرتجع', valR: report.kitchenConsumption?.returns || '', labelL: '', valL: '' },
-  ];
+  const empSubR = empStartRow + 1;
+  worksheet.getCell(`A${empSubR}`).value = 'م';
+  worksheet.getCell(`B${empSubR}`).value = 'اسم الموظف';
+  worksheet.getCell(`C${empSubR}`).value = 'قيمة السلفة';
+  worksheet.mergeCells(`D${empSubR}:D${empSubR}`);
+  worksheet.getCell(`D${empSubR}`).value = 'التوقيع / ملاحظات';
+  ['A', 'B', 'C', 'D'].forEach(c => applyStyle(worksheet.getCell(`${c}${empSubR}`), true, 'center', 'FFF8F9FA'));
 
-  // Production Table (Tikka, Broasted, Zinger)
-  const prodItems = [
-    { n: 'بروستد', item: report.productionItems?.find(p => p.name === 'بروستد') },
-    { n: 'تكا', item: report.productionItems?.find(p => p.name === 'تكا') },
-    { n: 'زنجر', item: report.productionItems?.find(p => p.name === 'زنجر') }
-  ];
-
-  // Table Headers
-  const kHeaderRow = worksheet.addRow([
-    'استهلاك المطبخ', '', '', '', 'الإنتاج', ''
-  ]);
-  worksheet.mergeCells(`A${kHeaderRow.number}:D${kHeaderRow.number}`);
-  worksheet.mergeCells(`E${kHeaderRow.number}:F${kHeaderRow.number}`);
-  applyStyle(kHeaderRow.getCell('A'), true, 'center', 'FFF8F9FA');
-  applyStyle(kHeaderRow.getCell('E'), true, 'center', 'FFF8F9FA');
-
-  const kSubHeaderRow = worksheet.addRow([
-    '', '', '', '', 
-    prodItems[0].n, prodItems[1].n // We'll squeeze the 3 columns into E & F by just displaying text if needed, or expand columns.
-  ]);
-  // Wait, E and F are only 2 columns, but we have 3 production items + 1 label. We might need a slightly different layout.
-  // Let's use columns A, B for Kitchen Left, C, D for Kitchen Right, E for Prod Label, F for Prod Val? No, let's just make rows.
-  // Actually, let's keep it simple.
-
-  worksheet.addRow(['سيخ 1', kArr[0].valR, 'استهلاك رز', kArr[0].valL, 'الشفت الأول', `${prodItems[0].n}:${prodItems[0].item?.shift1||0} | ${prodItems[1].n}:${prodItems[1].item?.shift1||0} | ${prodItems[2].n}:${prodItems[2].item?.shift1||0}`]);
-  worksheet.addRow(['سيخ 2', kArr[1].valR, 'استهلاك لوز', kArr[1].valL, 'الشفت الثاني', `${prodItems[0].n}:${prodItems[0].item?.shift2||0} | ${prodItems[1].n}:${prodItems[1].item?.shift2||0} | ${prodItems[2].n}:${prodItems[2].item?.shift2||0}`]);
-  worksheet.addRow(['تزويد', kArr[2].valR, 'استهلاك بطاطا', kArr[2].valL, 'المجموع', `${prodItems[0].n}:${prodItems[0].item?.total||0} | ${prodItems[1].n}:${prodItems[1].item?.total||0} | ${prodItems[2].n}:${prodItems[2].item?.total||0}`]);
-  worksheet.addRow(['مرتجع', kArr[3].valR, '', '', '', '']);
-
-  // Format these rows
-  for(let i = 0; i < 4; i++) {
-    const rowNum = kHeaderRow.number + 2 + i;
-    ['A', 'C', 'E'].forEach(c => applyStyle(worksheet.getCell(`${c}${rowNum}`), true, 'right', 'FFF8F9FA'));
-    ['B', 'D', 'F'].forEach(c => applyStyle(worksheet.getCell(`${c}${rowNum}`), false, 'center'));
-  }
-
-  worksheet.addRow([]); // Spacer
-
-  // 5. Section 4 (Custody Claims)
-  const sec4Row = worksheet.addRow(['جدول العُهد']);
-  worksheet.mergeCells(`A${sec4Row.number}:F${sec4Row.number}`);
-  applyStyle(worksheet.getCell(`A${sec4Row.number}`), true, 'right', undefined, false);
-  worksheet.getCell(`A${sec4Row.number}`).font = { size: 14, bold: true, color: { argb: 'FF1E3A5F' } };
-
-  const sec4Headers = worksheet.addRow(['م', 'البيان', 'له', 'عليه', 'ملاحظات', '']);
-  worksheet.mergeCells(`E${sec4Headers.number}:F${sec4Headers.number}`);
-  ['A', 'B', 'C', 'D', 'E'].forEach(col => applyStyle(sec4Headers.getCell(col), true, 'center', 'FFF8F9FA'));
-
-  const custodyList = report.custodyClaims || [
-    { id: '1', person: '', forThem: 0, onThem: 0, notes: '' },
-    { id: '2', person: '', forThem: 0, onThem: 0, notes: '' },
-    { id: '3', person: '', forThem: 0, onThem: 0, notes: '' },
-    { id: '4', person: '', forThem: 0, onThem: 0, notes: '' }
-  ];
-
-  custodyList.slice(0, 4).forEach((c, idx) => {
-    const r = worksheet.addRow([
-      idx + 1,
-      c.person,
-      c.forThem > 0 ? c.forThem : '-',
-      c.onThem > 0 ? c.onThem : '-',
-      c.notes || '',
-      ''
-    ]);
-    worksheet.mergeCells(`E${r.number}:F${r.number}`);
-    applyStyle(r.getCell('A'), true, 'center');
-    applyStyle(r.getCell('B'), true, 'right');
-    applyStyle(r.getCell('C'), true, 'center', 'FFD1FAE5'); // emerald light
-    applyStyle(r.getCell('D'), true, 'center', 'FFFFE4E6'); // rose light
-    applyStyle(r.getCell('E'), false, 'right');
-  });
-
-  // ------------------------------------------------------------------
-  // SECOND SHEET: سجل الموظفين (Employee Records)
-  // ------------------------------------------------------------------
-  const empSheet = workbook.addWorksheet('سجل الموظفين', {
-    views: [{ rightToLeft: true }]
-  });
-
-  empSheet.columns = [
-    { key: 'A', width: 5 },   // م
-    { key: 'B', width: 20 },  // اسم الموظف
-    { key: 'C', width: 12 },  // الدخول
-    { key: 'D', width: 12 },  // الخروج
-    { key: 'E', width: 12 },  // ساعات
-    { key: 'F', width: 12 },  // نوع
-    { key: 'G', width: 12 },  // الأجر/ساعة
-    { key: 'H', width: 15 },  // اليومية المحسوبة
-    { key: 'I', width: 15 },  // السلفة
-    { key: 'J', width: 25 },  // ملاحظات
-    { key: 'K', width: 15 }   // التوقيع
-  ];
-
-  const empTitleRow = empSheet.addRow(['سجل حركة الموظفين ومحاسبة المياومة']);
-  empSheet.mergeCells('A1:K1');
-  applyStyle(empSheet.getCell('A1'), true, 'center', '1e3a5f', false);
-  empSheet.getCell('A1').font = { size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
-  
-  empSheet.addRow([]); // Spacer
-
-  const empHeaders = empSheet.addRow([
-    'م', 'اسم الموظف', 'دخول', 'خروج', 'ساعات', 'نوع', 'أجر/س', 'اليومية', 'السلفة', 'ملاحظات', 'التوقيع'
-  ]);
-  ['A','B','C','D','E','F','G','H','I','J','K'].forEach(col => applyStyle(empHeaders.getCell(col), true, 'center', 'FFF8F9FA'));
-
-  // Calculate shift hours (copied logic)
-  const calculateShiftHours = (inTime: string, outTime: string) => {
-    if (!inTime || !outTime) return 0;
-    const [inH, inM] = inTime.split(':').map(Number);
-    const [outH, outM] = outTime.split(':').map(Number);
-    let diff = (outH * 60 + outM) - (inH * 60 + inM);
-    if (diff < 0) diff += 24 * 60; // crossed midnight
-    return Number((diff / 60).toFixed(2));
-  };
-  
-  const computeHourlyWage = (hours: number, rate: number, type: 'daily' | 'monthly') => {
-    if (type === 'monthly') return 0;
-    return Number((hours * rate).toFixed(2));
-  };
-
+  let curEmpR = empSubR + 1;
   report.employees.forEach((emp, i) => {
-    const isDaily = (emp.employmentType || 'daily') === 'daily';
-    const hours = emp.hoursWorked ?? calculateShiftHours(emp.shiftIn, emp.shiftOut);
-    const wage = isDaily ? (emp.calculatedWage ?? computeHourlyWage(hours, emp.hourlyRate || 1.5, 'daily')) : 0;
-    
-    const r = empSheet.addRow([
-      i + 1, 
-      emp.name, 
-      emp.shiftIn || '-', 
-      emp.shiftOut || '-', 
-      hours > 0 ? hours : '-', 
-      isDaily ? 'مياومة' : 'شهري', 
-      isDaily ? emp.hourlyRate || 1.5 : '-', 
-      isDaily ? wage : 'شهري', 
-      emp.advance > 0 ? emp.advance : '-', 
-      emp.notes || '', 
-      emp.signed ? 'موقع ✓' : ''
-    ]);
-    
-    ['A','B','C','D','E','F','G','H','I','J','K'].forEach(col => applyStyle(r.getCell(col), false, 'center'));
+    worksheet.getCell(`A${curEmpR}`).value = i + 1;
+    worksheet.getCell(`B${curEmpR}`).value = emp.name;
+    worksheet.getCell(`C${curEmpR}`).value = emp.advance > 0 ? emp.advance : '-';
+    worksheet.getCell(`D${curEmpR}`).value = emp.notes || '-';
+    applyStyle(worksheet.getCell(`A${curEmpR}`), false, 'center');
+    applyStyle(worksheet.getCell(`B${curEmpR}`), false, 'right');
+    applyStyle(worksheet.getCell(`C${curEmpR}`), false, 'center');
+    applyStyle(worksheet.getCell(`D${curEmpR}`), false, 'center');
+    curEmpR++;
   });
 
-  const empFooter = empSheet.addRow([
-    'إجمالي السلف', '', '', '', '', '', '', '', summary.totalAdvances, '', ''
-  ]);
-  empSheet.mergeCells(`A${empFooter.number}:H${empFooter.number}`);
-  ['A', 'I'].forEach(col => applyStyle(empFooter.getCell(col), true, 'center', 'FFE2E8F0'));
+  // Total Advances
+  worksheet.mergeCells(`A${curEmpR}:C${curEmpR}`);
+  worksheet.getCell(`A${curEmpR}`).value = 'إجمالي السلف';
+  worksheet.getCell(`D${curEmpR}`).value = summary.totalAdvances;
+  applyStyle(worksheet.getCell(`A${curEmpR}`), true, 'center', 'FFE2E8F0');
+  applyStyle(worksheet.getCell(`D${curEmpR}`), true, 'center', 'FFE2E8F0');
 
   // Download
   const buffer = await workbook.xlsx.writeBuffer();
@@ -370,7 +298,7 @@ export const exportDailyReportToExcel = async (report: DailyReport) => {
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `تقرير_يحيى_البيك_${report.date}.xlsx`;
+  a.download = 'cloned_output.xlsx';
   a.click();
   window.URL.revokeObjectURL(url);
 };

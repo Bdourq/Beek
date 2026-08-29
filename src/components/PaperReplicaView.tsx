@@ -1227,35 +1227,55 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
               <div className="border border-slate-700 rounded-lg p-2 bg-slate-50/40">
                 <div className="flex items-center justify-between font-bold text-xs bg-amber-100 text-amber-900 px-2 py-0.5 rounded mb-1">
                   <span>معدات وصيانة</span>
-                  <span className="font-mono text-xs">{formatNumber(summary.totalMaintenance)}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono text-xs">{formatNumber(summary.totalMaintenance)}</span>
+                    <button
+                      type="button"
+                      onClick={() => addListItem('maintenance', 'صيانة')}
+                      className="text-[10px] bg-white px-1.5 rounded hover:bg-slate-300 font-bold text-amber-900"
+                      title="إضافة بند جديد"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-1 text-xs">
                   {report.maintenance.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between gap-1">
+                    <div key={item.id} className="flex items-center justify-between gap-1 group">
                       <input
                         type="text"
                         value={item.name}
                         onChange={(e) =>
                           updateListField('maintenance', item.id, 'name', e.target.value)
                         }
-                        className="w-20 bg-transparent text-[11px] font-semibold truncate"
+                        className="w-16 bg-transparent text-[11px] font-semibold truncate"
                       />
-                      <input
-                        type="number" inputMode="decimal"
-                        step="1"
-                        value={item.amount === 0 ? '' : item.amount}
-                        placeholder="0"
-                        onKeyDown={handleKeyDownNavigation}
-                        onChange={(e) =>
-                          updateListField(
-                            'maintenance',
-                            item.id,
-                            'amount',
-                            parseFloat(e.target.value) || 0
-                          )
-                        }
-                        className="w-12 text-center font-mono font-bold text-xs bg-white border border-slate-200 rounded"
-                      />
+                      <div className="flex items-center gap-0.5">
+                        <input
+                          type="number" inputMode="decimal"
+                          step="1"
+                          value={item.amount === 0 ? '' : item.amount}
+                          placeholder="0"
+                          onKeyDown={handleKeyDownNavigation}
+                          onChange={(e) =>
+                            updateListField(
+                              'maintenance',
+                              item.id,
+                              'amount',
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
+                          className="w-12 text-center font-mono font-bold text-xs bg-white border border-slate-200 rounded"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => deleteListItem('maintenance', item.id)}
+                          className="text-slate-300 hover:text-rose-600 opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
+                          title="حذف البند"
+                        >
+                          ×
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1352,37 +1372,57 @@ export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
               <div className="border border-slate-700 rounded-lg p-2 bg-slate-50/40">
                 <div className="flex items-center justify-between font-bold text-xs bg-purple-100 text-purple-900 px-2 py-0.5 rounded mb-1">
                   <span>الشقة</span>
-                  <span className="font-mono text-xs">
-                    {formatNumber(summary.totalApartmentExpenses)}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono text-xs">
+                      {formatNumber(summary.totalApartmentExpenses)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => addListItem('apartmentExpenses', 'أغراض')}
+                      className="text-[10px] bg-white px-1.5 rounded hover:bg-slate-300 font-bold text-purple-900"
+                      title="إضافة بند جديد"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-1 text-xs">
                   {report.apartmentExpenses.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between gap-1">
+                    <div key={item.id} className="flex items-center justify-between gap-1 group">
                       <input
                         type="text"
                         value={item.name}
                         onChange={(e) =>
                           updateListField('apartmentExpenses', item.id, 'name', e.target.value)
                         }
-                        className="w-16 bg-transparent text-[11px] font-semibold"
+                        className="w-16 bg-transparent text-[11px] font-semibold truncate"
                       />
-                      <input
-                        type="number" inputMode="decimal"
-                        step="0.05"
-                        value={item.amount === 0 ? '' : item.amount}
-                        placeholder="0"
-                        onKeyDown={handleKeyDownNavigation}
-                        onChange={(e) =>
-                          updateListField(
-                            'apartmentExpenses',
-                            item.id,
-                            'amount',
-                            parseFloat(e.target.value) || 0
-                          )
-                        }
-                        className="w-12 text-center font-mono font-bold text-xs bg-white border border-slate-200 rounded"
-                      />
+                      <div className="flex items-center gap-0.5">
+                        <input
+                          type="number" inputMode="decimal"
+                          step="0.05"
+                          value={item.amount === 0 ? '' : item.amount}
+                          placeholder="0"
+                          onKeyDown={handleKeyDownNavigation}
+                          onChange={(e) =>
+                            updateListField(
+                              'apartmentExpenses',
+                              item.id,
+                              'amount',
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
+                          className="w-12 text-center font-mono font-bold text-xs bg-white border border-slate-200 rounded"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => deleteListItem('apartmentExpenses', item.id)}
+                          className="text-slate-300 hover:text-rose-600 opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
+                          title="حذف البند"
+                        >
+                          ×
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
