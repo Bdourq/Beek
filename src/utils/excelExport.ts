@@ -33,7 +33,7 @@ export const exportDailyReportToExcel = async (report: DailyReport) => {
   ];
 
   const applyStyle = (cell: ExcelJS.Cell, bold = false, align: 'center' | 'left' | 'right' = 'center', bgColor?: string, border = true) => {
-    cell.font = { name: 'Arial', size: 10, bold, color: bgColor === '1e3a5f' ? { argb: 'FFFFFFFF' } : undefined };
+    cell.font = { name: 'Arial', size: 10, bold, color: bgColor === 'C8102E' ? { argb: 'FFFFFFFF' } : undefined };
     cell.alignment = { vertical: 'middle', horizontal: align };
     if (border) {
       cell.border = {
@@ -45,7 +45,7 @@ export const exportDailyReportToExcel = async (report: DailyReport) => {
     }
     if (bgColor) {
       cell.fill = {
-        type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor === '1e3a5f' ? 'FF1E3A5F' : bgColor }
+        type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor === 'C8102E' ? 'FFC8102E' : bgColor }
       };
     }
   };
@@ -54,7 +54,7 @@ export const exportDailyReportToExcel = async (report: DailyReport) => {
   worksheet.mergeCells('A1:K1');
   const titleCell = worksheet.getCell('A1');
   titleCell.value = 'مطعم يحيى البيك - تقرير إغلاق الكاش اليومي الشامل';
-  applyStyle(titleCell, true, 'center', '1e3a5f', false);
+  applyStyle(titleCell, true, 'center', 'C8102E', false);
   titleCell.font = { size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
 
   worksheet.addRow([]); // Row 2
@@ -79,7 +79,7 @@ export const exportDailyReportToExcel = async (report: DailyReport) => {
     worksheet.mergeCells(`${col1}${startRow}:${col2}${startRow}`);
     const tCell = worksheet.getCell(`${col1}${startRow}`);
     tCell.value = title;
-    applyStyle(tCell, true, 'center', '1e3a5f');
+    applyStyle(tCell, true, 'center', 'C8102E');
 
     const subR = startRow + 1;
     worksheet.getCell(`${col1}${subR}`).value = 'البيان';
@@ -237,7 +237,7 @@ export const exportDailyReportToExcel = async (report: DailyReport) => {
     worksheet.mergeCells(`A${rIdx}:K${rIdx}`);
     const empTitle = worksheet.getCell(`A${rIdx}`);
     empTitle.value = 'سجل سلف الموظفين اليومية';
-    applyStyle(empTitle, true, 'center', '1e3a5f');
+    applyStyle(empTitle, true, 'center', 'C8102E');
     rIdx++;
 
     // Sub headers: A-B: م, C-E: اسم الموظف, F-H: قيمة السلفة, I-K: التوقيع / ملاحظات
@@ -287,12 +287,13 @@ export const exportDailyReportToExcel = async (report: DailyReport) => {
   writeEmployeeAdvancesAt(maxTableEndRow);
 
   // Download
+  const fileName = `تقرير_إغلاق_يحيى_البيك_${report.date}_${report.dayName}.xlsx`;
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'cloned_output.xlsx';
+  a.download = fileName;
   a.click();
   window.URL.revokeObjectURL(url);
 };

@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DailyReport, SummaryCalculations } from '../types';
 import { formatCurrency, formatNumber } from '../utils/calculations';
 import { exportDailyReportToExcel } from '../utils/excelExport';
 import { AlBaikLogo } from './AlBaikLogo';
+import html2canvas from 'html2canvas';
 import {
   FileSpreadsheet,
   Printer,
@@ -12,7 +13,9 @@ import {
   AlertTriangle,
   Wallet,
   ShieldCheck,
-  Users
+  Users,
+  Image as ImageIcon,
+  Download
 } from 'lucide-react';
 
 interface UnifiedReportViewProps {
@@ -21,12 +24,38 @@ interface UnifiedReportViewProps {
 }
 
 export const UnifiedReportView: React.FC<UnifiedReportViewProps> = ({ report, summary }) => {
+  const [isExportingImage, setIsExportingImage] = useState(false);
+
   const handlePrint = () => {
     window.print();
   };
 
   const handleExport = () => {
     exportDailyReportToExcel(report);
+  };
+
+  const handleDownloadImage = async () => {
+    const element = document.getElementById('unified-report-view');
+    if (!element) return;
+    try {
+      setIsExportingImage(true);
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        ignoreElements: (el) => el.classList.contains('print:hidden'),
+      });
+      const image = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = image;
+      a.download = `تقرير_إغلاق_يحيى_البيك_${report.date}_${report.dayName}.png`;
+      a.click();
+    } catch (err) {
+      console.error('Failed to export image:', err);
+      alert('حدث خطأ أثناء تصدير الصورة، يرجى المحاولة مرة أخرى.');
+    } finally {
+      setIsExportingImage(false);
+    }
   };
 
   const custodyList = report.custodyClaims || [
@@ -42,29 +71,38 @@ export const UnifiedReportView: React.FC<UnifiedReportViewProps> = ({ report, su
   return (
     <div id="unified-report-view" className="print-compact space-y-6 max-w-4xl mx-auto text-slate-900 font-sans pb-12">
       {/* Top Action Bar (hidden on print) */}
-      <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-xs print:hidden">
+      <div className="flex flex-wrap items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-xs print:hidden gap-3">
         <div className="flex items-center gap-3">
           <AlBaikLogo size="sm" />
           <div>
-            <h3 className="font-bold text-slate-900 text-sm">عرض تقرير إغلاق الكاش اليومي الشامل</h3>
-            <p className="text-xs text-slate-500">مطابق تماماً لنموذج PDF والإكسيل الرسمي مع جدول العُهد والمحفظة</p>
+            <h3 className="font-bold text-slate-900 text-sm">عرض تقرير إغلاق الكاش اليومي الشامل (جميع تفاصيل الإكسل)</h3>
+            <p className="text-xs text-slate-500">جاهز للطباعة الفورية، التصدير كملف Excel، أو التحميل كصورة عالية الدقة</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={handleDownloadImage}
+            disabled={isExportingImage}
+            className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors disabled:opacity-50"
+          >
+            <ImageIcon className="w-4 h-4 text-yellow-200" />
+            <span>{isExportingImage ? 'جاري تجهيز الصورة...' : 'تنزيل كصورة PNG'}</span>
+          </button>
           <button
             type="button"
             onClick={handleExport}
             className="px-3 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors"
           >
             <FileSpreadsheet className="w-4 h-4" />
-            <span>تصدير Excel طبق الأصل</span>
+            <span>تصدير Excel</span>
           </button>
           <button
             type="button"
             onClick={handlePrint}
-            className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors"
+            className="px-3 py-2 bg-[#C8102E] hover:bg-[#a60d25] text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors"
           >
-            <Printer className="w-4 h-4 text-yellow-400" />
+            <Printer className="w-4 h-4 text-yellow-300" />
             <span>طباعة PDF</span>
           </button>
         </div>
@@ -579,34 +617,38 @@ export const UnifiedReportView: React.FC<UnifiedReportViewProps> = ({ report, su
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Kitchen Consumption */}
             <div className="border border-slate-300 rounded-lg overflow-hidden h-fit">
-              <div className="bg-slate-100 px-4 py-2 font-black text-center text-xs border-b border-slate-300 text-slate-800">
+              <div className="bg-[#C8102E] text-white px-4 py-2 font-black text-center text-xs border-b border-slate-300">
                 استهلاك المطبخ
               </div>
               <table className="w-full text-xs text-right">
                 <tbody className="divide-y divide-slate-200">
                   <tr>
-                    <td className="p-2 font-bold text-slate-700 bg-slate-50 w-1/4">سيخ 1 (رز)</td>
-                    <td className="p-2 font-mono text-slate-900 w-1/4">{report.kitchenConsumption?.rice1 || '-'}</td>
-                    <td className="p-2 font-bold text-slate-700 bg-slate-50 w-1/4">استهلاك لوز</td>
-                    <td className="p-2 font-mono text-slate-900 w-1/4">{report.kitchenConsumption?.almonds || '-'}</td>
+                    <td className="p-2 font-bold text-slate-700 bg-slate-50 w-1/2">سيخ 1</td>
+                    <td className="p-2 font-mono text-slate-900 w-1/2">{report.kitchenConsumption?.rice1 || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="p-2 font-bold text-slate-700 bg-slate-50">سيخ 2 (رز)</td>
+                    <td className="p-2 font-bold text-slate-700 bg-slate-50">سيخ 2</td>
                     <td className="p-2 font-mono text-slate-900">{report.kitchenConsumption?.rice2 || '-'}</td>
-                    <td className="p-2 font-bold text-slate-700 bg-slate-50">استهلاك بطاطا</td>
-                    <td className="p-2 font-mono text-slate-900">{report.kitchenConsumption?.potatoes || '-'}</td>
                   </tr>
                   <tr>
                     <td className="p-2 font-bold text-slate-700 bg-slate-50">تزويد</td>
                     <td className="p-2 font-mono text-slate-900">{report.kitchenConsumption?.supplyIn || '-'}</td>
-                    <td className="p-2 font-bold text-slate-700 bg-slate-50">قشرة</td>
-                    <td className="p-2 font-mono text-slate-900">{report.kitchenConsumption?.peel || '-'}</td>
                   </tr>
                   <tr>
                     <td className="p-2 font-bold text-slate-700 bg-slate-50">مرتجع</td>
                     <td className="p-2 font-mono text-slate-900">{report.kitchenConsumption?.returns || '-'}</td>
-                    <td className="p-2 font-bold text-slate-700 bg-slate-50">جنات</td>
-                    <td className="p-2 font-mono text-slate-900">{report.kitchenConsumption?.jannat || '-'}</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 font-bold text-slate-700 bg-slate-50">استهلاك رز</td>
+                    <td className="p-2 font-mono text-slate-900">{(Number(report.kitchenConsumption?.rice1) || 0) + (Number(report.kitchenConsumption?.rice2) || 0)}</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 font-bold text-slate-700 bg-slate-50">استهلاك لوز</td>
+                    <td className="p-2 font-mono text-slate-900">{report.kitchenConsumption?.almonds || '-'}</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 font-bold text-slate-700 bg-slate-50">استهلاك بطاطا</td>
+                    <td className="p-2 font-mono text-slate-900">{report.kitchenConsumption?.potatoes || '-'}</td>
                   </tr>
                 </tbody>
               </table>
