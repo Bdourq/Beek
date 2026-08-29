@@ -40,10 +40,11 @@ export function calculateReportSummary(report: DailyReport): SummaryCalculations
   const otherSales = Number(report.otherSales) || 0;
   const openingCash = Number(report.openingCash) || 0;
   const newDebtsTotal = Number(report.newDebtsTotal) || totalVendorDebtsAdded || 0;
+  const oldDebtsPaidTotal = Number(report.oldDebtsPaidTotal) || 0;
 
   const totalExpectedRevenue = sales + otherSales;
-  // مجموع الكاش = النقد الافتتاحي + إضافة ذمم جديدة + المبيعات + مبيعات أخرى (مطابق تماماً لورقة المطعم)
-  const totalGrossCashAvailable = openingCash + newDebtsTotal + sales + otherSales;
+  // مجموع الكاش = النقد الافتتاحي + إضافة ذمم جديدة + تسديد ذمم قديمة + المبيعات + مبيعات أخرى
+  const totalGrossCashAvailable = openingCash + newDebtsTotal + oldDebtsPaidTotal + sales + otherSales;
 
   // Reconciled Total as computed in paper sheet:
   // نقد + مشتريات + سلف + سداد تجار + مصاريف أخرى + الشقة + إدارية + محفظة + يحيى + أبو عبدالله + فيزا + RT + مايسترو + فرق سعر + صيانة + بهارات

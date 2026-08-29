@@ -38,6 +38,7 @@ export function App() {
   const [reports, setReports] = useState<DailyReport[]>([]);
   const [currentReport, setCurrentReport] = useState<DailyReport | null>(null);
   const [viewMode, setViewMode] = useState<'paper' | 'cashier' | 'audit'>('paper');
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving'>('saved');
 
   // Modals state
   const [isEmployeesModalOpen, setIsEmployeesModalOpen] = useState(false);
@@ -45,23 +46,31 @@ export function App() {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Initialize data on mount
+  // Initialize data on mount: enforce one report per day restriction
   useEffect(() => {
     const saved = loadSavedReports();
-    setReports(saved);
-    if (saved.length > 0) {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const existingToday = saved.find(r => r.date === todayStr);
+
+    if (existingToday) {
+      setReports(saved);
+      setCurrentReport(existingToday);
+    } else if (saved.length > 0) {
+      setReports(saved);
       setCurrentReport(saved[0]);
     } else {
       const fresh = createNewReport();
       setReports([fresh]);
       setCurrentReport(fresh);
+      saveReportLocally(fresh);
     }
   }, []);
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Update handler for current report
+  // Update handler for current report with auto-save & status indicator
   const handleUpdateReport = useCallback((updatedFields: Partial<DailyReport>) => {
+    setSaveStatus('saving');
     setCurrentReport(prev => {
       if (!prev) return prev;
       const updated: DailyReport = {
@@ -75,20 +84,28 @@ export function App() {
         prevList.map((r) => (r.id === updated.id ? updated : r))
       );
 
-      // Debounce heavy localStorage writing
+      // Debounce heavy localStorage writing & trigger auto-save
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
       saveTimeoutRef.current = setTimeout(() => {
         saveReportLocally(updated);
-      }, 500);
+        setSaveStatus('saved');
+      }, 300);
 
       return updated;
     });
   }, []);
 
-  // Switch to a new empty report
+  // Switch to a new empty report or open today's existing report (only once per day)
   const handleNewReport = () => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const existingToday = reports.find(r => r.date === todayStr);
+    if (existingToday) {
+      setCurrentReport(existingToday);
+      alert('يوجد بالفعل تقرير مسجل لتاريخ اليوم. لا يمكن فتح أكثر من صفحة لنفس اليوم، وتم فتح التقرير الحالي للتعديل عليه فقط.');
+      return;
+    }
     const newRep = createNewReport();
     const updatedList = [newRep, ...reports];
     setReports(updatedList);
@@ -217,7 +234,22 @@ export function App() {
           </div>
 
           {/* Action Tools */}
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Auto-save status indicator */}
+            <div className="flex items-center text-xs">
+              {saveStatus === 'saving' ? (
+                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-xl flex items-center gap-1.5 animate-pulse font-bold">
+                  <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                  جارٍ الحفظ...
+                </span>
+              ) : (
+                <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-xl flex items-center gap-1.5 font-bold shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  تم الحفظ تلقائياً ✓
+                </span>
+              )}
+            </div>
+
             <button
               type="button"
               onClick={handleLoadYesterdayRealClosing}

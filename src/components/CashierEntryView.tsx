@@ -285,6 +285,21 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
                     </td>
                   </tr>
 
+                  {/* تسديد ذمم قديمة */}
+                  <tr className="hover:bg-slate-50">
+                    <td className="p-3 font-bold text-slate-800 text-sm">تسديد ذمم قديمة</td>
+                    <td className="p-2 w-44">
+                      <input
+                        type="number" inputMode="decimal"
+                        step="0.5"
+                        value={report.oldDebtsPaidTotal === 0 ? '' : report.oldDebtsPaidTotal}
+                        placeholder="0.00"
+                        onChange={(e) => onUpdateReport({ oldDebtsPaidTotal: parseFloat(e.target.value) || 0 })}
+                        className="w-full px-3 py-2 text-center font-mono font-black text-sm rounded-lg border border-slate-300 bg-white focus:bg-amber-50 focus:border-amber-500 focus:outline-none"
+                      />
+                    </td>
+                  </tr>
+
                   {/* مبيعات */}
                   <tr className="hover:bg-slate-50">
                     <td className="p-3 font-bold text-slate-800 text-sm">مبيعات</td>
@@ -327,7 +342,7 @@ export const CashierEntryView: React.FC<CashierEntryViewProps> = ({
 
               {/* Tips */}
               <div className="p-3 bg-slate-50 border-t border-slate-200 text-[11px] text-slate-600">
-                💡 <span className="font-bold">معادلة مجموع الكاش:</span> النقد الافتتاحي + إضافة ذمم + المبيعات + مبيعات أخرى.
+                💡 <span className="font-bold">معادلة مجموع الكاش:</span> النقد الافتتاحي + إضافة ذمم + تسديد ذمم قديمة + المبيعات + مبيعات أخرى.
               </div>
             </div>
 
