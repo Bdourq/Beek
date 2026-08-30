@@ -161,7 +161,8 @@ export const exportDailyReportToExcel = async (report: DailyReport) => {
     worksheet.mergeCells(`J${rIdx}:K${rIdx}`);
     const cHead = worksheet.getCell(`J${rIdx}`);
     cHead.value = 'بيانات الكاش والمبيعات';
-    applyStyle(cHead, true, 'center', 'FFF8F9FA');
+    applyStyle(cHead, true, 'center', 'FEF3C7'); // Soft amber gold header
+    cHead.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF92400E' } };
     rIdx++;
 
     const cashArr = [
@@ -176,8 +177,13 @@ export const exportDailyReportToExcel = async (report: DailyReport) => {
     cashArr.forEach(item => {
       worksheet.getCell(`J${rIdx}`).value = item.l;
       worksheet.getCell(`K${rIdx}`).value = item.v !== undefined && item.v !== null && item.v !== 0 ? item.v : '-';
-      applyStyle(worksheet.getCell(`J${rIdx}`), item.h, 'right', item.h ? 'FFE2E8F0' : undefined);
-      applyStyle(worksheet.getCell(`K${rIdx}`), item.h, 'center', item.h ? 'FFE2E8F0' : undefined);
+      const bg = item.h ? 'FEF9C3' : undefined; // Lighter gold for cash total
+      applyStyle(worksheet.getCell(`J${rIdx}`), item.h, 'right', bg);
+      applyStyle(worksheet.getCell(`K${rIdx}`), item.h, 'center', bg);
+      if (item.h) {
+        worksheet.getCell(`J${rIdx}`).font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF78350F' } };
+        worksheet.getCell(`K${rIdx}`).font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF78350F' } };
+      }
       rIdx++;
     });
 
@@ -187,7 +193,8 @@ export const exportDailyReportToExcel = async (report: DailyReport) => {
     worksheet.mergeCells(`J${rIdx}:K${rIdx}`);
     const iHead = worksheet.getCell(`J${rIdx}`);
     iHead.value = 'ملخص الجرد الفعلي';
-    applyStyle(iHead, true, 'center', 'FFF8F9FA');
+    applyStyle(iHead, true, 'center', 'E0E7FF'); // Soft indigo/blue professional accent
+    iHead.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF3730A3' } };
     rIdx++;
 
     const invArr = [
@@ -208,16 +215,20 @@ export const exportDailyReportToExcel = async (report: DailyReport) => {
       { l: 'بهارات', v: summary.totalSpices },
       { l: 'معدات وصيانة', v: summary.totalMaintenance },
       { l: 'مجموع الجرد', v: summary.totalReconciledInventory, h: true },
-      { l: 'نقص الكاش', v: summary.differenceType === 'shortage' ? summary.cashDifference : 0, h: true, c: 'FFFFF0F5' },
-      { l: 'زيادة الكاش', v: summary.differenceType === 'surplus' ? summary.cashDifference : 0, h: true, c: 'FFF0FDF4' }
+      { l: 'نقص الكاش', v: summary.differenceType === 'shortage' ? summary.cashDifference : 0, h: true, c: 'FFE1EEF8', textCol: 'FF990000' },
+      { l: 'زيادة الكاش', v: summary.differenceType === 'surplus' ? summary.cashDifference : 0, h: true, c: 'FFE6F4EA', textCol: 'FF137333' }
     ];
 
     invArr.forEach(item => {
-      const bg = item.c || (item.h ? 'FFE2E8F0' : undefined);
+      const bg = item.c || (item.h ? 'EEF2FF' : undefined);
       worksheet.getCell(`J${rIdx}`).value = item.l;
       worksheet.getCell(`K${rIdx}`).value = item.v !== undefined && item.v !== null && item.v !== 0 ? item.v : '-';
       applyStyle(worksheet.getCell(`J${rIdx}`), item.h, 'right', bg);
       applyStyle(worksheet.getCell(`K${rIdx}`), item.h, 'center', bg);
+      if (item.h) {
+        worksheet.getCell(`J${rIdx}`).font = { name: 'Arial', size: 10, bold: true, color: { argb: item.textCol || 'FF312E81' } };
+        worksheet.getCell(`K${rIdx}`).font = { name: 'Arial', size: 10, bold: true, color: { argb: item.textCol || 'FF312E81' } };
+      }
       rIdx++;
     });
 
@@ -228,6 +239,74 @@ export const exportDailyReportToExcel = async (report: DailyReport) => {
 
   // Determine max row from all columns above
   const maxTableEndRow = Math.max(r1, r2, r3, summaryEndRow) + 2;
+
+  // ==========================================
+  // MIDDLE BOTTOM: Two Mini Tables (Kitchen Consumption & Production Inventory)
+  // ==========================================
+  const writeMiniExtraTablesAt = (startRow: number) => {
+    let rIdx = startRow;
+    
+    // Kitchen Consumption Table (Cols A-E)
+    worksheet.mergeCells(`A${rIdx}:B${rIdx}`);
+    const kHead = worksheet.getCell(`A${rIdx}`);
+    kHead.value = 'استهلاك المطبخ';
+    applyStyle(kHead, true, 'center', 'FEF3C7');
+    kHead.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF92400E' } };
+    rIdx++;
+
+    const kItems = [
+      { l: 'سيخ 1', v: report.kitchenConsumption?.rice1 || 0 },
+      { l: 'سيخ 2', v: report.kitchenConsumption?.rice2 || 0 },
+      { l: 'تزويد', v: report.kitchenConsumption?.supplyIn || 0 },
+      { l: 'مرتجع', v: report.kitchenConsumption?.returns || 0 },
+      { l: 'استهلاك رز', v: (Number(report.kitchenConsumption?.rice1) || 0) + (Number(report.kitchenConsumption?.rice2) || 0), h: true },
+      { l: 'استهلاك لوز', v: report.kitchenConsumption?.almonds || 0 },
+      { l: 'استهلاك بطاطا', v: report.kitchenConsumption?.potatoes || 0 }
+    ];
+
+    kItems.forEach(item => {
+      worksheet.mergeCells(`A${rIdx}:B${rIdx}`);
+      worksheet.getCell(`A${rIdx}`).value = item.l;
+      worksheet.getCell(`C${rIdx}`).value = item.v;
+      const bg = item.h ? 'FEF9C3' : undefined;
+      applyStyle(worksheet.getCell(`A${rIdx}`), item.h, 'right', bg);
+      applyStyle(worksheet.getCell(`C${rIdx}`), item.h, 'center', bg);
+      if (item.h) {
+        worksheet.getCell(`A${rIdx}`).font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF78350F' } };
+        worksheet.getCell(`C${rIdx}`).font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF78350F' } };
+      }
+      rIdx++;
+    });
+
+    rIdx += 2;
+
+    // Production Inventory Table (Cols A-C)
+    worksheet.mergeCells(`A${rIdx}:B${rIdx}`);
+    const pHead = worksheet.getCell(`A${rIdx}`);
+    pHead.value = 'جرد الإنتاج';
+    applyStyle(pHead, true, 'center', 'E0E7FF');
+    pHead.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF3730A3' } };
+    rIdx++;
+
+    const pItems = report.productionItems || [
+      { id: '1', name: 'بروستد', shift1: 0, shift2: 0, total: 0 },
+      { id: '2', name: 'تكا', shift1: 0, shift2: 0, total: 0 },
+      { id: '3', name: 'زنجر', shift1: 0, shift2: 0, total: 0 }
+    ];
+
+    pItems.forEach(p => {
+      worksheet.mergeCells(`A${rIdx}:B${rIdx}`);
+      worksheet.getCell(`A${rIdx}`).value = p.name;
+      worksheet.getCell(`C${rIdx}`).value = p.total;
+      applyStyle(worksheet.getCell(`A${rIdx}`), false, 'right');
+      applyStyle(worksheet.getCell(`C${rIdx}`), false, 'center');
+      rIdx++;
+    });
+
+    return rIdx + 2;
+  };
+
+  const extraTablesEndRow = writeMiniExtraTablesAt(maxTableEndRow);
 
   // ==========================================
   // BOTTOM: Employee Advances Table (سجل سلف الموظفين) at the very bottom
@@ -284,7 +363,7 @@ export const exportDailyReportToExcel = async (report: DailyReport) => {
     }
   };
 
-  writeEmployeeAdvancesAt(maxTableEndRow);
+  writeEmployeeAdvancesAt(extraTablesEndRow);
 
   // Download
   const fileName = `تقرير_إغلاق_يحيى_البيك_${report.date}_${report.dayName}.xlsx`;

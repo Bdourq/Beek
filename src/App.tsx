@@ -14,6 +14,7 @@ import { DiscrepancyBanner } from './components/DiscrepancyBanner';
 import { PaperReplicaView } from './components/PaperReplicaView';
 import { CashierEntryView } from './components/CashierEntryView';
 import { UnifiedReportView } from './components/UnifiedReportView';
+import { AttachmentsSection } from './components/AttachmentsSection';
 import { EmployeesModal } from './components/EmployeesModal';
 import { ShareModal } from './components/ShareModal';
 import { HistoryModal } from './components/HistoryModal';
@@ -129,6 +130,50 @@ export function App() {
     if (currentReport?.id === id) {
       setCurrentReport(updatedList[0] || createNewReport());
     }
+  };
+
+  // Close day handler
+  const handleCloseDay = () => {
+    if (!currentReport) return;
+    if (currentReport.status === 'closed') {
+      alert('هذا التقرير مغلق مسبقاً.');
+      return;
+    }
+    
+    // Check if there are active custody claims
+    if (summary.totalCustodyForThem > 0 || summary.totalCustodyOnThem > 0) {
+      alert('لا يمكن إغلاق الجرد بوجود عهدات نشطة! يرجى تصفير جدول العُهد أولاً (تأكد أن جميع القيم له/عليه تساوي صفر).');
+      return;
+    }
+
+    const confirmClose = window.confirm(`هل أنت متأكد من إغلاق جرد تاريخ ${currentReport.date} نهائياً؟ بعد الإغلاق سيتم اعتماد فرق الكاش (نقص/زيادة) ولن يمكن التعديل عليه، والبدء بيوم جديد.`);
+    if (!confirmClose) return;
+
+    const closedRep: DailyReport = {
+      ...currentReport,
+      status: 'closed',
+      updatedAt: new Date().toISOString()
+    };
+    saveReportLocally(closedRep);
+
+    // Create next day report
+    const currDateObj = new Date(currentReport.date + 'T00:00:00');
+    currDateObj.setDate(currDateObj.getDate() + 1);
+    const nextDateStr = currDateObj.toISOString().split('T')[0];
+
+    const existingNext = reports.find(r => r.date === nextDateStr);
+    if (existingNext) {
+      setCurrentReport(existingNext);
+      setReports(reports.map(r => r.id === closedRep.id ? closedRep : r));
+    } else {
+      const newNextRep = createNewReport(nextDateStr);
+      newNextRep.openingCash = currentReport.actualCashInDrawer || 0;
+      const updatedList = [newNextRep, ...reports.map(r => r.id === closedRep.id ? closedRep : r)];
+      setReports(updatedList);
+      setCurrentReport(newNextRep);
+      saveReportLocally(newNextRep);
+    }
+    alert('تم إغلاق جرد اليوم بنجاح وانتقال النظام لتاريخ اليوم التالي.');
   };
 
   // Cloud Sync
@@ -310,6 +355,20 @@ export function App() {
 
             <button
               type="button"
+              onClick={handleCloseDay}
+              disabled={currentReport.status === 'closed'}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-colors shadow-sm ${
+                currentReport.status === 'closed'
+                  ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed'
+                  : 'bg-amber-600 hover:bg-amber-500 text-white'
+              }`}
+              title="إغلاق جرد اليوم نهائياً والبدء بيوم جديد"
+            >
+              <span>🔒 {currentReport.status === 'closed' ? 'اليوم مغلق' : 'إغلاق اليوم'}</span>
+            </button>
+
+            <button
+              type="button"
               onClick={handleNewReport}
               className="p-2 bg-red-600 hover:bg-red-500 text-white border border-yellow-400 rounded-xl text-xs font-bold transition-colors shadow-sm"
               title="بدء يومية جديدة"
@@ -322,6 +381,18 @@ export function App() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 space-y-4">
+        {currentReport.status === 'closed' && (
+          <div className="bg-amber-500/10 border-2 border-amber-500 text-amber-800 p-4 rounded-2xl flex items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <span className="text-xl">🔒</span>
+              <div>
+                <h4 className="font-black text-sm">هذا التقرير مغلق نهائياً</h4>
+                <p className="text-xs text-amber-700">تم إغلاق هذا اليوم ولا يمكن التعديل على بياناته أو قيمه المالية.</p>
+              </div>
+            </div>
+            <span className="bg-amber-500 text-white text-xs font-black px-3 py-1 rounded-xl">مغلق ومؤرشف</span>
+          </div>
+        )}
         {/* Live Discrepancy Banner */}
         <DiscrepancyBanner
           summary={summary}
@@ -349,6 +420,17 @@ export function App() {
         {viewMode === 'audit' && (
           <UnifiedReportView report={currentReport} summary={summary} />
         )}
+
+        {/* Paper Photos Archive */}
+        <AttachmentsSection 
+          reportId={currentReport.id} 
+          isClosed={currentReport.status === 'closed'}
+          onHasAttachmentsChange={(has: boolean) => {
+            if (currentReport.hasAttachments !== has) {
+              handleUpdateReport({ hasAttachments: has });
+            }
+          }}
+        />
       </main>
 
       {/* Footer */}

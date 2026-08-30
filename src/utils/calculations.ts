@@ -82,6 +82,9 @@ export function calculateReportSummary(report: DailyReport): SummaryCalculations
     differenceType = 'shortage';
   }
 
+  const totalCustodyForThem = report.custodyClaims?.reduce((sum, c) => sum + (Number(c.forThem) || 0), 0) || 0;
+  const totalCustodyOnThem = report.custodyClaims?.reduce((sum, c) => sum + (Number(c.onThem) || 0), 0) || 0;
+
   return {
     totalPurchases: parseFloat(totalPurchases.toFixed(2)),
     totalAdvances: parseFloat(totalAdvances.toFixed(2)),
@@ -95,6 +98,8 @@ export function calculateReportSummary(report: DailyReport): SummaryCalculations
     totalAbuAbdullah: parseFloat(totalAbuAbdullah.toFixed(2)),
     totalWallet: parseFloat(totalWallet.toFixed(2)),
     totalOtherExpenses: parseFloat(totalOtherExpenses.toFixed(2)),
+    totalCustodyForThem: parseFloat(totalCustodyForThem.toFixed(2)),
+    totalCustodyOnThem: parseFloat(totalCustodyOnThem.toFixed(2)),
     totalAllExpensesAndOutflows: parseFloat(totalAllExpensesAndOutflows.toFixed(2)),
     totalExpectedRevenue: parseFloat(totalExpectedRevenue.toFixed(2)),
     totalGrossCashAvailable: parseFloat(totalGrossCashAvailable.toFixed(2)),

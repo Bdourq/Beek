@@ -43,7 +43,7 @@ export const UnifiedReportView: React.FC<UnifiedReportViewProps> = ({ report, su
     try {
       setIsExportingImage(true);
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 3,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
@@ -103,32 +103,35 @@ export const UnifiedReportView: React.FC<UnifiedReportViewProps> = ({ report, su
             <p className="text-xs text-slate-500">جاهز للطباعة الفورية، التصدير كملف Excel، أو التحميل كصورة عالية الدقة</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
           <button
             type="button"
             onClick={handleDownloadImage}
             disabled={isExportingImage}
-            className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors disabled:opacity-50"
+            className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl text-sm font-black flex justify-center items-center gap-2 shadow-lg hover:shadow-xl transition-all disabled:opacity-70 disabled:cursor-wait"
           >
-            <ImageIcon className="w-4 h-4 text-yellow-200" />
-            <span>{isExportingImage ? 'جاري تجهيز الصورة...' : 'تنزيل كصورة PNG'}</span>
+            <ImageIcon className="w-5 h-5 text-emerald-100 animate-pulse" />
+            <span>{isExportingImage ? 'جاري تجهيز الصورة...' : '📸 تصوير للإدارة (WhatsApp)'}</span>
           </button>
-          <button
-            type="button"
-            onClick={handleExport}
-            className="px-3 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors"
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            <span>تصدير Excel</span>
-          </button>
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="px-3 py-2 bg-[#C8102E] hover:bg-[#a60d25] text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors"
-          >
-            <Printer className="w-4 h-4 text-yellow-300" />
-            <span>طباعة PDF</span>
-          </button>
+          
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={handleExport}
+              className="flex-1 sm:flex-none px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex justify-center items-center gap-1.5 shadow-sm transition-colors"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              <span>إكسل</span>
+            </button>
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="flex-1 sm:flex-none px-3 py-2.5 bg-[#C8102E] hover:bg-[#a60d25] text-white rounded-xl text-xs font-bold flex justify-center items-center gap-1.5 shadow-sm transition-colors"
+            >
+              <Printer className="w-4 h-4 text-yellow-300" />
+              <span>PDF</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -162,45 +165,45 @@ export const UnifiedReportView: React.FC<UnifiedReportViewProps> = ({ report, su
         {/* Two-Column Side-by-Side Table (Exact to image) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Right Column: بيانات الكاش والمبيعات */}
-          <div className="border border-slate-300 rounded-lg overflow-hidden h-fit">
-            <div className="bg-slate-100 px-4 py-2 font-black text-center text-xs border-b border-slate-300 text-slate-800">
+          <div className="border-2 border-amber-200/60 rounded-xl overflow-hidden h-fit shadow-md bg-white">
+            <div className="bg-gradient-to-r from-amber-50 to-amber-100 px-4 py-2.5 font-black text-center text-sm border-b-2 border-amber-200 text-amber-900 tracking-wide">
               بيانات الكاش والمبيعات
             </div>
-            <table className="w-full text-xs text-right">
-              <tbody className="divide-y divide-slate-200">
-                <tr>
-                  <td className="p-2 font-medium text-slate-700">النقد الافتتاحي</td>
-                  <td className="p-2 font-mono font-bold text-left text-slate-900">
+            <table className="w-full text-sm text-right">
+              <tbody className="divide-y divide-amber-100/50">
+                <tr className="hover:bg-amber-50/30 transition-colors">
+                  <td className="p-2.5 font-bold text-slate-800">النقد الافتتاحي</td>
+                  <td className="p-2.5 font-mono font-bold text-left text-slate-900">
                     {report.openingCash > 0 ? formatNumber(report.openingCash) : '-'}
                   </td>
                 </tr>
-                <tr>
-                  <td className="p-2 font-medium text-slate-700">اضافة ذمم</td>
-                  <td className="p-2 font-mono font-bold text-left text-slate-900">
+                <tr className="hover:bg-amber-50/30 transition-colors">
+                  <td className="p-2.5 font-bold text-slate-800">اضافة ذمم</td>
+                  <td className="p-2.5 font-mono font-bold text-left text-slate-900">
                     {summary.totalVendorDebtsAdded > 0 ? formatNumber(summary.totalVendorDebtsAdded) : '-'}
                   </td>
                 </tr>
-                <tr>
-                  <td className="p-2 font-medium text-slate-700">تسديد ذمم قديمة</td>
-                  <td className="p-2 font-mono font-bold text-left text-slate-900">
+                <tr className="hover:bg-amber-50/30 transition-colors">
+                  <td className="p-2.5 font-bold text-slate-800">تسديد ذمم قديمة</td>
+                  <td className="p-2.5 font-mono font-bold text-left text-slate-900">
                     {summary.totalVendorDebtsPaid > 0 ? formatNumber(summary.totalVendorDebtsPaid) : '-'}
                   </td>
                 </tr>
-                <tr>
-                  <td className="p-2 font-medium text-slate-700">مبيعات</td>
-                  <td className="p-2 font-mono font-bold text-left text-slate-900">
+                <tr className="hover:bg-amber-50/30 transition-colors">
+                  <td className="p-2.5 font-bold text-slate-800">مبيعات</td>
+                  <td className="p-2.5 font-mono font-bold text-left text-slate-900">
                     {report.sales > 0 ? formatNumber(report.sales) : '-'}
                   </td>
                 </tr>
-                <tr>
-                  <td className="p-2 font-medium text-slate-700">مبيعات أخرى</td>
-                  <td className="p-2 font-mono font-bold text-left text-slate-900">
+                <tr className="hover:bg-amber-50/30 transition-colors">
+                  <td className="p-2.5 font-bold text-slate-800">مبيعات أخرى</td>
+                  <td className="p-2.5 font-mono font-bold text-left text-slate-900">
                     {report.otherSales > 0 ? formatNumber(report.otherSales) : '-'}
                   </td>
                 </tr>
-                <tr className="bg-slate-200/80 font-black">
-                  <td className="p-2.5 text-slate-900">مجموع الكاش</td>
-                  <td className="p-2.5 font-mono text-left text-slate-950">
+                <tr className="bg-amber-100 font-black border-t-2 border-amber-200">
+                  <td className="p-3 text-amber-950 text-base">مجموع الكاش</td>
+                  <td className="p-3 font-mono text-left text-amber-950 text-base">
                     {formatNumber(summary.totalGrossCashAvailable)}
                   </td>
                 </tr>
@@ -209,123 +212,123 @@ export const UnifiedReportView: React.FC<UnifiedReportViewProps> = ({ report, su
           </div>
 
           {/* Left Column: ملخص الجرد الفعلي */}
-          <div className="border border-slate-300 rounded-lg overflow-hidden">
-            <div className="bg-slate-100 px-4 py-2 font-black text-center text-xs border-b border-slate-300 text-slate-800">
+          <div className="border-2 border-indigo-200/60 rounded-xl overflow-hidden shadow-md bg-white">
+            <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 px-4 py-2.5 font-black text-center text-sm border-b-2 border-indigo-200 text-indigo-900 tracking-wide">
               ملخص الجرد الفعلي
             </div>
-            <table className="w-full text-xs text-right">
-              <tbody className="divide-y divide-slate-200">
-                <tr className="bg-yellow-50/50">
-                  <td className="p-2 font-black text-slate-900">نقد (الكاش الفعلي)</td>
-                  <td className="p-2 font-mono font-bold text-left text-slate-900">
+            <table className="w-full text-sm text-right">
+              <tbody className="divide-y divide-indigo-100/50">
+                <tr className="bg-indigo-50/50 hover:bg-indigo-50 transition-colors">
+                  <td className="p-2.5 font-black text-indigo-950">نقد (الكاش الفعلي)</td>
+                  <td className="p-2.5 font-mono font-black text-left text-indigo-950">
                     {report.actualCashInDrawer > 0 ? formatNumber(report.actualCashInDrawer) : '-'}
                   </td>
                 </tr>
-                <tr>
-                  <td className="p-2 font-medium text-slate-700">فيزا</td>
-                  <td className="p-2 font-mono font-bold text-left text-slate-900">
+                <tr className="hover:bg-indigo-50/30 transition-colors">
+                  <td className="p-2.5 font-bold text-slate-800">فيزا</td>
+                  <td className="p-2.5 font-mono font-bold text-left text-slate-900">
                     {report.visaPOS > 0 ? formatNumber(report.visaPOS) : '-'}
                   </td>
                 </tr>
-                <tr>
-                  <td className="p-2 font-medium text-slate-700">Rt</td>
-                  <td className="p-2 font-mono font-bold text-left text-slate-900">
+                <tr className="hover:bg-indigo-50/30 transition-colors">
+                  <td className="p-2.5 font-bold text-slate-800">Rt</td>
+                  <td className="p-2.5 font-mono font-bold text-left text-slate-900">
                     {report.rtPOS > 0 ? formatNumber(report.rtPOS) : '-'}
                   </td>
                 </tr>
-                <tr>
-                  <td className="p-2 font-medium text-slate-700">مايسترو</td>
-                  <td className="p-2 font-mono font-bold text-left text-slate-900">
+                <tr className="hover:bg-indigo-50/30 transition-colors">
+                  <td className="p-2.5 font-bold text-slate-800">مايسترو</td>
+                  <td className="p-2.5 font-mono font-bold text-left text-slate-900">
                     {report.maestroPOS > 0 ? formatNumber(report.maestroPOS) : '-'}
                   </td>
                 </tr>
-                <tr>
-                  <td className="p-2 font-medium text-slate-700">فرق سعر</td>
-                  <td className="p-2 font-mono font-bold text-left text-slate-900">
+                <tr className="hover:bg-indigo-50/30 transition-colors">
+                  <td className="p-2.5 font-bold text-slate-800">فرق سعر</td>
+                  <td className="p-2.5 font-mono font-bold text-left text-slate-900">
                     {report.priceDiff > 0 ? formatNumber(report.priceDiff) : '-'}
                   </td>
                 </tr>
-                <tr>
-                  <td className="p-2 font-medium text-slate-700">سلف</td>
-                  <td className="p-2 font-mono font-bold text-left text-slate-900">
+                <tr className="hover:bg-indigo-50/30 transition-colors">
+                  <td className="p-2.5 font-bold text-slate-800">سلف</td>
+                  <td className="p-2.5 font-mono font-bold text-left text-slate-900">
                     {summary.totalAdvances > 0 ? formatNumber(summary.totalAdvances) : '-'}
                   </td>
                 </tr>
-                <tr>
-                  <td className="p-2 font-medium text-slate-700">المحفظة</td>
-                  <td className="p-2 font-mono font-bold text-left text-slate-900">
+                <tr className="hover:bg-indigo-50/30 transition-colors">
+                  <td className="p-2.5 font-bold text-slate-800">المحفظة</td>
+                  <td className="p-2.5 font-mono font-bold text-left text-slate-900">
                     {summary.totalWallet > 0 ? formatNumber(summary.totalWallet) : '-'}
                   </td>
                 </tr>
-                <tr>
-                  <td className="p-2 font-medium text-slate-700">مشتريات</td>
-                  <td className="p-2 font-mono font-bold text-left text-slate-900">
+                <tr className="hover:bg-indigo-50/30 transition-colors">
+                  <td className="p-2.5 font-bold text-slate-800">مشتريات</td>
+                  <td className="p-2.5 font-mono font-bold text-left text-slate-900">
                     {summary.totalPurchases > 0 ? formatNumber(summary.totalPurchases) : '-'}
                   </td>
                 </tr>
-                <tr>
-                  <td className="p-2 font-medium text-slate-700">سداد ذمم تجار</td>
-                  <td className="p-2 font-mono font-bold text-left text-slate-900">
+                <tr className="hover:bg-indigo-50/30 transition-colors">
+                  <td className="p-2.5 font-bold text-slate-800">سداد ذمم تجار</td>
+                  <td className="p-2.5 font-mono font-bold text-left text-slate-900">
                     {summary.totalVendorDebtsPaid > 0 ? formatNumber(summary.totalVendorDebtsPaid) : '-'}
                   </td>
                 </tr>
-                <tr>
-                  <td className="p-2 font-medium text-slate-700">مصاريف أخرى</td>
-                  <td className="p-2 font-mono font-bold text-left text-slate-900">
+                <tr className="hover:bg-indigo-50/30 transition-colors">
+                  <td className="p-2.5 font-bold text-slate-800">مصاريف أخرى</td>
+                  <td className="p-2.5 font-mono font-bold text-left text-slate-900">
                     {summary.totalOtherExpenses > 0 ? formatNumber(summary.totalOtherExpenses) : '-'}
                   </td>
                 </tr>
-                <tr>
-                  <td className="p-2 font-medium text-slate-700">الشقة</td>
-                  <td className="p-2 font-mono font-bold text-left text-slate-900">
+                <tr className="hover:bg-indigo-50/30 transition-colors">
+                  <td className="p-2.5 font-bold text-slate-800">الشقة</td>
+                  <td className="p-2.5 font-mono font-bold text-left text-slate-900">
                     {summary.totalApartmentExpenses > 0 ? formatNumber(summary.totalApartmentExpenses) : '-'}
                   </td>
                 </tr>
-                <tr>
-                  <td className="p-2 font-medium text-slate-700">مصاريف إدارية</td>
-                  <td className="p-2 font-mono font-bold text-left text-slate-900">
+                <tr className="hover:bg-indigo-50/30 transition-colors">
+                  <td className="p-2.5 font-bold text-slate-800">مصاريف إدارية</td>
+                  <td className="p-2.5 font-mono font-bold text-left text-slate-900">
                     {summary.totalAdminExpenses > 0 ? formatNumber(summary.totalAdminExpenses) : '-'}
                   </td>
                 </tr>
-                <tr>
-                  <td className="p-2 font-medium text-slate-700">يحيى</td>
-                  <td className="p-2 font-mono font-bold text-left text-slate-900">
+                <tr className="hover:bg-indigo-50/30 transition-colors">
+                  <td className="p-2.5 font-bold text-slate-800">يحيى</td>
+                  <td className="p-2.5 font-mono font-bold text-left text-slate-900">
                     {summary.totalYahya > 0 ? formatNumber(summary.totalYahya) : '0.00'}
                   </td>
                 </tr>
-                <tr>
-                  <td className="p-2 font-medium text-slate-700">أبو عبدالله</td>
-                  <td className="p-2 font-mono font-bold text-left text-slate-900">
+                <tr className="hover:bg-indigo-50/30 transition-colors">
+                  <td className="p-2.5 font-bold text-slate-800">أبو عبدالله</td>
+                  <td className="p-2.5 font-mono font-bold text-left text-slate-900">
                     {summary.totalAbuAbdullah > 0 ? formatNumber(summary.totalAbuAbdullah) : '0.00'}
                   </td>
                 </tr>
-                <tr>
-                  <td className="p-2 font-medium text-slate-700">بهارات</td>
-                  <td className="p-2 font-mono font-bold text-left text-slate-900">
+                <tr className="hover:bg-indigo-50/30 transition-colors">
+                  <td className="p-2.5 font-bold text-slate-800">بهارات</td>
+                  <td className="p-2.5 font-mono font-bold text-left text-slate-900">
                     {summary.totalSpices > 0 ? formatNumber(summary.totalSpices) : '0.00'}
                   </td>
                 </tr>
-                <tr>
-                  <td className="p-2 font-medium text-slate-700">معدات وصيانة</td>
-                  <td className="p-2 font-mono font-bold text-left text-slate-900">
+                <tr className="hover:bg-indigo-50/30 transition-colors">
+                  <td className="p-2.5 font-bold text-slate-800">معدات وصيانة</td>
+                  <td className="p-2.5 font-mono font-bold text-left text-slate-900">
                     {summary.totalMaintenance > 0 ? formatNumber(summary.totalMaintenance) : '0.00'}
                   </td>
                 </tr>
-                <tr className="bg-sky-50 font-black border-t-2 border-slate-300">
-                  <td className="p-2.5 text-slate-900">مجموع الجرد</td>
-                  <td className="p-2.5 font-mono text-left text-slate-950">
+                <tr className="bg-indigo-100 font-black border-t-2 border-indigo-200">
+                  <td className="p-3 text-indigo-950 text-base">مجموع الجرد</td>
+                  <td className="p-3 font-mono text-left text-indigo-950 text-base">
                     {formatNumber(summary.totalReconciledInventory)}
                   </td>
                 </tr>
-                <tr className="bg-rose-50/50">
-                  <td className="p-2 font-bold text-slate-800">نقص الكاش</td>
-                  <td className="p-2 font-mono font-bold text-left text-rose-700">
+                <tr className="bg-rose-50 border-t border-rose-100">
+                  <td className="p-3 font-black text-rose-900">نقص الكاش</td>
+                  <td className="p-3 font-mono font-black text-left text-rose-700 text-base">
                     {summary.differenceType === 'shortage' ? formatNumber(Math.abs(summary.cashDifference)) : '0.00'}
                   </td>
                 </tr>
-                <tr className="bg-emerald-50/50">
-                  <td className="p-2 font-bold text-slate-800">زيادة الكاش</td>
-                  <td className="p-2 font-mono font-bold text-left text-emerald-700">
+                <tr className="bg-emerald-50 border-t border-emerald-100">
+                  <td className="p-3 font-black text-emerald-900">زيادة الكاش</td>
+                  <td className="p-3 font-mono font-black text-left text-emerald-700 text-base">
                     {summary.differenceType === 'surplus' ? formatNumber(summary.cashDifference) : '0.00'}
                   </td>
                 </tr>

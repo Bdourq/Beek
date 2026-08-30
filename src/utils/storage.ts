@@ -84,8 +84,8 @@ export function exportBackupJSON(): void {
   URL.revokeObjectURL(url);
 }
 
-export function createNewReport(): DailyReport {
-  return createEmptyDailyReport();
+export function createNewReport(dateStr?: string): DailyReport {
+  return createEmptyDailyReport(dateStr);
 }
 
 export const loadSavedReports = getAllSavedReports;

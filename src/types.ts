@@ -106,6 +106,7 @@ export interface DailyReport {
 
   // Notes
   generalNotes: string;
+  hasAttachments?: boolean;
 }
 
 export interface SummaryCalculations {
@@ -121,6 +122,8 @@ export interface SummaryCalculations {
   totalAbuAbdullah: number;
   totalWallet: number;
   totalOtherExpenses: number;
+  totalCustodyForThem: number;
+  totalCustodyOnThem: number;
   totalAllExpensesAndOutflows: number; // جميع المصاريف والمشتريات والسلف والسدادات
 
   // Total Expected Cash inflow

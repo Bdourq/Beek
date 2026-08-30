@@ -124,6 +124,14 @@ export const DiscrepancyBanner: React.FC<DiscrepancyBannerProps> = ({ summary, o
           </div>
         </div>
       </div>
+      
+      {/* Custody Warning */}
+      {(summary.totalCustodyForThem > 0 || summary.totalCustodyOnThem > 0) && (
+        <div className="mt-4 bg-orange-100 border border-orange-300 text-orange-900 px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm animate-pulse">
+          <AlertCircle className="w-5 h-5 text-orange-600" />
+          تنبيه: يوجد عهدات نشطة (له/عليه) لم يتم تصفيرها. يجب تصفير جدول العُهد قبل إغلاق الجرد اليومي!
+        </div>
+      )}
     </div>
   );
 };

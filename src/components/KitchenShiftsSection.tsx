@@ -51,7 +51,7 @@ export const KitchenShiftsSection: React.FC<KitchenShiftsSectionProps> = ({
         </div>
         <div>
           <h2 className="text-base font-bold text-slate-900">استهلاك المطبخ وحركة الإنتاج اليومي</h2>
-          <p className="text-xs text-slate-500">حركة شفتات البروستد والتكا والزنجر واستهلاك الرز والبطاطا واللوز</p>
+          <p className="text-xs text-slate-500">حركة شفتات الإنتاج واستهلاك الرز والبطاطا واللوز</p>
         </div>
       </div>
 
@@ -60,7 +60,7 @@ export const KitchenShiftsSection: React.FC<KitchenShiftsSectionProps> = ({
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
             <Layers className="w-4 h-4 text-amber-600" />
-            <span>حركة إنتاج الشفتات (بروستد / تكا / زنجر)</span>
+            <span>حركة إنتاج الشفتات</span>
           </div>
 
           <div className="overflow-hidden rounded-xl border border-slate-200">
