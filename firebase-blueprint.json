@@ -1,0 +1,31 @@
+{
+  "collections": [
+    {
+      "name": "reports",
+      "path": "users/{userId}/reports/{reportId}",
+      "description": "Daily reports for the user",
+      "documentId": "reportId",
+      "fields": [
+        { "name": "id", "type": "string", "validation": "isString" }
+      ]
+    },
+    {
+      "name": "attachments",
+      "path": "users/{userId}/reports/{reportId}/attachments/{attachmentId}",
+      "description": "Base64 image attachments for a specific report",
+      "documentId": "attachmentId",
+      "fields": [
+        { "name": "id", "type": "string", "validation": "isString" },
+        { "name": "dataUrl", "type": "string", "validation": "isString" },
+        { "name": "timestamp", "type": "string", "validation": "isString" }
+      ]
+    },
+    {
+      "name": "settings",
+      "path": "users/{userId}/settings/{settingId}",
+      "description": "User specific settings, like employees list",
+      "documentId": "settingId",
+      "fields": []
+    }
+  ]
+}

@@ -1,4 +1,5 @@
-import { get, set, del } from 'idb-keyval';
+import { db, auth } from '../firebase';
+import { collection, doc, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
 
 export interface Attachment {
   id: string;
@@ -6,33 +7,40 @@ export interface Attachment {
   timestamp: string;
 }
 
-const getStoreKey = (reportId: string) => `report-attachments-${reportId}`;
-
 export async function getAttachments(reportId: string): Promise<Attachment[]> {
+  const user = auth.currentUser;
+  if (!user) return [];
+  
   try {
-    const data = await get<Attachment[]>(getStoreKey(reportId));
-    return data || [];
+    const attachmentsRef = collection(db, 'users', user.uid, 'reports', reportId, 'attachments');
+    const snapshot = await getDocs(attachmentsRef);
+    return snapshot.docs.map(doc => doc.data() as Attachment);
   } catch (error) {
-    console.error('Error getting attachments from IndexedDB:', error);
+    console.error('Error getting attachments from Firestore:', error);
     return [];
   }
 }
 
-export async function saveAttachments(reportId: string, attachments: Attachment[]): Promise<void> {
+export async function addAttachment(reportId: string, attachment: Attachment): Promise<void> {
+  const user = auth.currentUser;
+  if (!user) return;
+
   try {
-    await set(getStoreKey(reportId), attachments);
+    const docRef = doc(db, 'users', user.uid, 'reports', reportId, 'attachments', attachment.id);
+    await setDoc(docRef, attachment);
   } catch (error) {
-    console.error('Error saving attachments to IndexedDB:', error);
+    console.error('Error saving attachment to Firestore:', error);
   }
 }
 
-export async function addAttachment(reportId: string, attachment: Attachment): Promise<void> {
-  const existing = await getAttachments(reportId);
-  await saveAttachments(reportId, [...existing, attachment]);
-}
-
 export async function removeAttachment(reportId: string, attachmentId: string): Promise<void> {
-  const existing = await getAttachments(reportId);
-  const updated = existing.filter(a => a.id !== attachmentId);
-  await saveAttachments(reportId, updated);
+  const user = auth.currentUser;
+  if (!user) return;
+
+  try {
+    const docRef = doc(db, 'users', user.uid, 'reports', reportId, 'attachments', attachmentId);
+    await deleteDoc(docRef);
+  } catch (error) {
+    console.error('Error deleting attachment from Firestore:', error);
+  }
 }

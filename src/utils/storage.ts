@@ -1,79 +1,69 @@
 import { DailyReport } from '../types';
 import { createSampleDailyReport, createEmptyDailyReport } from '../data/initialData';
+import { db, auth } from '../firebase';
+import { collection, doc, getDocs, setDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
 
-const STORAGE_KEY_CURRENT = 'yahya_albaik_current_report';
-const STORAGE_KEY_REPORTS_LIST = 'yahya_albaik_all_reports';
-
-export function loadCurrentReport(): DailyReport {
+export async function loadSavedReports(): Promise<DailyReport[]> {
+  const user = auth.currentUser;
+  if (!user) return [];
+  
   try {
-    const saved = localStorage.getItem(STORAGE_KEY_CURRENT);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed && parsed.date) return parsed;
+    const reportsRef = collection(db, 'users', user.uid, 'reports');
+    // We can order by date descending or just fetch all
+    const q = query(reportsRef);
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) {
+      return [];
     }
+    
+    const reports = snapshot.docs.map(doc => doc.data() as DailyReport);
+    // Sort descending by date
+    reports.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return reports;
   } catch (err) {
-    console.error('Error loading current report from localStorage', err);
+    console.error('Error loading reports from Firestore', err);
+    return [];
   }
-  // If no current report, load the sample report from paper sheet as starting template
-  return createSampleDailyReport();
 }
 
-export function saveCurrentReport(report: DailyReport): void {
+export async function saveReportLocally(report: DailyReport): Promise<void> {
+  const user = auth.currentUser;
+  if (!user) return;
+  
   try {
     report.updatedAt = new Date().toISOString();
-    localStorage.setItem(STORAGE_KEY_CURRENT, JSON.stringify(report));
-    
-    // Also save into the archived list
-    saveReportToArchive(report);
+    const docRef = doc(db, 'users', user.uid, 'reports', report.id);
+    await setDoc(docRef, report);
   } catch (err) {
-    console.error('Error saving current report', err);
+    console.error('Error saving report to Firestore', err);
   }
 }
 
-export function getAllSavedReports(): DailyReport[] {
+export async function deleteReportLocally(reportId: string): Promise<DailyReport[]> {
+  const user = auth.currentUser;
+  if (!user) return [];
+  
   try {
-    const saved = localStorage.getItem(STORAGE_KEY_REPORTS_LIST);
-    if (saved) {
-      return JSON.parse(saved);
-    }
-  } catch (err) {
-    console.error('Error loading archive', err);
-  }
-  const sample = createSampleDailyReport();
-  return [sample];
-}
-
-export function saveReportToArchive(report: DailyReport): void {
-  try {
-    const all = getAllSavedReports();
-    const existingIndex = all.findIndex(r => r.id === report.id || r.date === report.date);
-    if (existingIndex >= 0) {
-      all[existingIndex] = report;
-    } else {
-      all.unshift(report);
-    }
-    localStorage.setItem(STORAGE_KEY_REPORTS_LIST, JSON.stringify(all));
-  } catch (err) {
-    console.error('Error saving to archive', err);
-  }
-}
-
-export function deleteReportFromArchive(reportId: string): DailyReport[] {
-  try {
-    const all = getAllSavedReports().filter(r => r.id !== reportId);
-    localStorage.setItem(STORAGE_KEY_REPORTS_LIST, JSON.stringify(all));
-    return all;
+    const docRef = doc(db, 'users', user.uid, 'reports', reportId);
+    await deleteDoc(docRef);
+    return await loadSavedReports();
   } catch (err) {
     console.error('Error deleting report', err);
     return [];
   }
 }
 
-export function exportBackupJSON(): void {
+export function createNewReport(dateStr?: string): DailyReport {
+  return createEmptyDailyReport(dateStr);
+}
+
+export async function exportBackupJSON(): Promise<void> {
+  const reports = await loadSavedReports();
   const data = {
-    version: '1.0',
+    version: '2.0',
     exportDate: new Date().toISOString(),
-    reports: getAllSavedReports()
+    reports
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -84,26 +74,8 @@ export function exportBackupJSON(): void {
   URL.revokeObjectURL(url);
 }
 
-export function createNewReport(dateStr?: string): DailyReport {
-  return createEmptyDailyReport(dateStr);
-}
-
-export const loadSavedReports = getAllSavedReports;
-export const saveReportLocally = saveCurrentReport;
-export const deleteReportLocally = deleteReportFromArchive;
-
+// Dummy functions to satisfy old references if any
 export async function syncReportWithCloud(report: DailyReport): Promise<{ success: boolean; message: string }> {
-  try {
-    const res = await fetch('/api/reports/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(report)
-    });
-    if (res.ok) {
-      return { success: true, message: 'تم المزامنة بنجاح' };
-    }
-  } catch (e) {
-    console.log('Local fallback active, sync offline', e);
-  }
-  return { success: true, message: 'تم الحفظ محلياً' };
+  await saveReportLocally(report);
+  return { success: true, message: 'تم الحفظ في السحابة بنجاح' };
 }

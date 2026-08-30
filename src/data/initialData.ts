@@ -93,7 +93,7 @@ export function createEmptyDailyReport(dateStr?: string): DailyReport {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     status: 'open',
-    cashierName: 'كاشير الشفت',
+    cashierName: 'قصي البدور',
     branch: 'مطعم يحيى البيك',
 
     openingCash: 0,

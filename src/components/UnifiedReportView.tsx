@@ -3,7 +3,8 @@ import { DailyReport, SummaryCalculations } from '../types';
 import { formatCurrency, formatNumber } from '../utils/calculations';
 import { exportDailyReportToExcel } from '../utils/excelExport';
 import { AlBaikLogo } from './AlBaikLogo';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
+import { jsPDF } from 'jspdf';
 import {
   FileSpreadsheet,
   Printer,
@@ -25,9 +26,42 @@ interface UnifiedReportViewProps {
 
 export const UnifiedReportView: React.FC<UnifiedReportViewProps> = ({ report, summary }) => {
   const [isExportingImage, setIsExportingImage] = useState(false);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    const element = document.getElementById('unified-report-view');
+    if (!element) {
+      alert('لم يتم العثور على عنصر التقرير.');
+      return;
+    }
+    try {
+      setIsExportingPDF(true);
+      
+      const filter = (node: HTMLElement) => {
+        return !node.classList?.contains('print:hidden');
+      };
+
+      const imgData = await toPng(element, {
+        pixelRatio: 3,
+        backgroundColor: '#ffffff',
+        filter: filter as any,
+      });
+      
+      // Calculate dimensions in points (pt) for PDF
+      const pdf = new jsPDF({
+        orientation: element.offsetWidth > element.offsetHeight ? 'landscape' : 'portrait',
+        unit: 'px',
+        format: [element.offsetWidth, element.offsetHeight]
+      });
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, element.offsetWidth, element.offsetHeight);
+      pdf.save(`تقرير_إغلاق_يحيى_البيك_${report.date || 'اليوم'}_${report.dayName || 'تقرير'}.pdf`);
+    } catch (err) {
+      console.error('Error exporting PDF:', err);
+      alert('حدث خطأ أثناء توليد ملف الـ PDF.');
+    } finally {
+      setIsExportingPDF(false);
+    }
   };
 
   const handleExport = () => {
@@ -42,35 +76,35 @@ export const UnifiedReportView: React.FC<UnifiedReportViewProps> = ({ report, su
     }
     try {
       setIsExportingImage(true);
-      const canvas = await html2canvas(element, {
-        scale: 3,
-        useCORS: true,
-        allowTaint: true,
+
+      const filter = (node: HTMLElement) => {
+        return !node.classList?.contains('print:hidden');
+      };
+
+      const dataUrl = await toPng(element, {
+        pixelRatio: 3,
         backgroundColor: '#ffffff',
-        ignoreElements: (el) => el.classList.contains('print:hidden'),
+        filter: filter as any,
       });
       
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          throw new Error('فشل توليد صورة التقرير');
-        }
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `تقرير_إغلاق_يحيى_البيك_${report.date || 'اليوم'}_${report.dayName || 'تقرير'}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 'image/png');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `تقرير_إغلاق_يحيى_البيك_${report.date || 'اليوم'}_${report.dayName || 'تقرير'}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
     } catch (err) {
       console.error('Failed to export image:', err);
-      // Fallback to dataURL if blob creation fails
+      // Fallback
       try {
-        const canvas = await html2canvas(element, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff', ignoreElements: (el) => el.classList.contains('print:hidden') });
-        const image = canvas.toDataURL('image/png');
+        const dataUrl = await toPng(element, { 
+          pixelRatio: 1.5, 
+          backgroundColor: '#ffffff',
+          filter: (node: HTMLElement) => !node.classList?.contains('print:hidden') as any
+        });
         const a = document.createElement('a');
-        a.href = image;
+        a.href = dataUrl;
         a.download = `تقرير_إغلاق_يحيى_البيك_${report.date || 'اليوم'}_${report.dayName || 'تقرير'}.png`;
         a.click();
       } catch (innerErr) {
@@ -126,10 +160,11 @@ export const UnifiedReportView: React.FC<UnifiedReportViewProps> = ({ report, su
             <button
               type="button"
               onClick={handlePrint}
-              className="flex-1 sm:flex-none px-3 py-2.5 bg-[#C8102E] hover:bg-[#a60d25] text-white rounded-xl text-xs font-bold flex justify-center items-center gap-1.5 shadow-sm transition-colors"
+              disabled={isExportingPDF}
+              className="flex-1 sm:flex-none px-3 py-2.5 bg-[#C8102E] hover:bg-[#a60d25] text-white rounded-xl text-xs font-bold flex justify-center items-center gap-1.5 shadow-sm transition-colors disabled:opacity-70 disabled:cursor-wait"
             >
-              <Printer className="w-4 h-4 text-yellow-300" />
-              <span>PDF</span>
+              <Printer className={`w-4 h-4 text-yellow-300 ${isExportingPDF ? 'animate-pulse' : ''}`} />
+              <span>{isExportingPDF ? 'جاري التجهيز...' : 'PDF'}</span>
             </button>
           </div>
         </div>

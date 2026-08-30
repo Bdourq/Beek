@@ -19,6 +19,8 @@ import { EmployeesModal } from './components/EmployeesModal';
 import { ShareModal } from './components/ShareModal';
 import { HistoryModal } from './components/HistoryModal';
 import { AlBaikLogo } from './components/AlBaikLogo';
+import { auth, loginWithGoogle, logout } from './firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import {
   FileSpreadsheet,
   Share2,
@@ -29,13 +31,20 @@ import {
   LayoutTemplate,
   SlidersHorizontal,
   FileCheck,
-  CloudCheck,
   RotateCcw,
-  Sparkles,
-  Flame
+  LogOut,
+  LogIn
 } from 'lucide-react';
 
 export function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isLoadingReports, setIsLoadingReports] = useState(false);
+
+  const [loginEmail, setLoginEmail] = useState('qusayalbdour99@gmail.com');
+  const [loginPassword, setLoginPassword] = useState('123456');
+  const [loginError, setLoginError] = useState('');
+
   const [reports, setReports] = useState<DailyReport[]>([]);
   const [currentReport, setCurrentReport] = useState<DailyReport | null>(null);
   const [viewMode, setViewMode] = useState<'paper' | 'cashier' | 'audit'>('paper');
@@ -47,25 +56,53 @@ export function App() {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Initialize data on mount: enforce one report per day restriction
   useEffect(() => {
-    const saved = loadSavedReports();
-    const todayStr = new Date().toISOString().split('T')[0];
-    const existingToday = saved.find(r => r.date === todayStr);
-
-    if (existingToday) {
-      setReports(saved);
-      setCurrentReport(existingToday);
-    } else if (saved.length > 0) {
-      setReports(saved);
-      setCurrentReport(saved[0]);
-    } else {
-      const fresh = createNewReport();
-      setReports([fresh]);
-      setCurrentReport(fresh);
-      saveReportLocally(fresh);
-    }
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setIsAuthLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
+
+  // Initialize data on mount when user is available
+  useEffect(() => {
+    if (!user) {
+      setReports([]);
+      setCurrentReport(null);
+      return;
+    }
+
+    let isMounted = true;
+    setIsLoadingReports(true);
+
+    const initReports = async () => {
+      const saved = await loadSavedReports();
+      if (!isMounted) return;
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      const existingToday = saved.find(r => r.date === todayStr);
+
+      if (existingToday) {
+        setReports(saved);
+        setCurrentReport(existingToday);
+      } else if (saved.length > 0) {
+        setReports(saved);
+        setCurrentReport(saved[0]);
+      } else {
+        const fresh = createNewReport();
+        setReports([fresh]);
+        setCurrentReport(fresh);
+        await saveReportLocally(fresh);
+      }
+      setIsLoadingReports(false);
+    };
+
+    initReports();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -85,21 +122,21 @@ export function App() {
         prevList.map((r) => (r.id === updated.id ? updated : r))
       );
 
-      // Debounce heavy localStorage writing & trigger auto-save
+      // Debounce heavy remote writing & trigger auto-save
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
-      saveTimeoutRef.current = setTimeout(() => {
-        saveReportLocally(updated);
+      saveTimeoutRef.current = setTimeout(async () => {
+        await saveReportLocally(updated);
         setSaveStatus('saved');
-      }, 300);
+      }, 500);
 
       return updated;
     });
   }, []);
 
   // Switch to a new empty report or open today's existing report (only once per day)
-  const handleNewReport = () => {
+  const handleNewReport = async () => {
     const todayStr = new Date().toISOString().split('T')[0];
     const existingToday = reports.find(r => r.date === todayStr);
     if (existingToday) {
@@ -111,21 +148,21 @@ export function App() {
     const updatedList = [newRep, ...reports];
     setReports(updatedList);
     setCurrentReport(newRep);
-    saveReportLocally(newRep);
+    await saveReportLocally(newRep);
   };
 
   // Reload yesterday's real closing data from paper sheet
-  const handleLoadYesterdayRealClosing = () => {
+  const handleLoadYesterdayRealClosing = async () => {
     const realReport = createSampleDailyReport();
     const updatedList = [realReport, ...reports.filter((r) => r.id !== realReport.id)];
     setReports(updatedList);
     setCurrentReport(realReport);
-    saveReportLocally(realReport);
+    await saveReportLocally(realReport);
   };
 
   // Delete report
-  const handleDeleteReport = (id: string) => {
-    const updatedList = deleteReportLocally(id);
+  const handleDeleteReport = async (id: string) => {
+    const updatedList = await deleteReportLocally(id);
     setReports(updatedList);
     if (currentReport?.id === id) {
       setCurrentReport(updatedList[0] || createNewReport());
@@ -133,7 +170,7 @@ export function App() {
   };
 
   // Close day handler
-  const handleCloseDay = () => {
+  const handleCloseDay = async () => {
     if (!currentReport) return;
     if (currentReport.status === 'closed') {
       alert('هذا التقرير مغلق مسبقاً.');
@@ -154,7 +191,7 @@ export function App() {
       status: 'closed',
       updatedAt: new Date().toISOString()
     };
-    saveReportLocally(closedRep);
+    await saveReportLocally(closedRep);
 
     // Create next day report
     const currDateObj = new Date(currentReport.date + 'T00:00:00');
@@ -171,7 +208,7 @@ export function App() {
       const updatedList = [newNextRep, ...reports.map(r => r.id === closedRep.id ? closedRep : r)];
       setReports(updatedList);
       setCurrentReport(newNextRep);
-      saveReportLocally(newNextRep);
+      await saveReportLocally(newNextRep);
     }
     alert('تم إغلاق جرد اليوم بنجاح وانتقال النظام لتاريخ اليوم التالي.');
   };
@@ -198,11 +235,111 @@ export function App() {
     window.print();
   };
 
-  if (!currentReport) {
+  // Add login with email handler
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError('');
+    try {
+      // Import these functions at the top of the file
+      const { loginWithEmail, registerWithEmail } = await import('./firebase');
+      try {
+        await loginWithEmail(loginEmail, loginPassword);
+      } catch (err: any) {
+        // If user not found, try to register them automatically
+        if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+          try {
+            await registerWithEmail(loginEmail, loginPassword);
+          } catch (registerErr: any) {
+            setLoginError('فشل تسجيل الدخول أو إنشاء الحساب: ' + registerErr.message);
+          }
+        } else {
+          setLoginError('خطأ في تسجيل الدخول: ' + err.message);
+        }
+      }
+    } catch (err) {
+      setLoginError('حدث خطأ غير متوقع');
+    }
+  };
+
+  if (isAuthLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 text-white font-bold gap-3">
         <AlBaikLogo size="md" />
-        <p className="text-yellow-400 text-sm animate-pulse">جاري تحميل نظام شاورما البيك - يحيى...</p>
+        <p className="text-yellow-400 text-sm animate-pulse">جاري التحقق من الهوية...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 text-white font-bold gap-8 px-4 text-center">
+        <AlBaikLogo size="lg" />
+        <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 p-8 rounded-3xl shadow-2xl flex flex-col items-center gap-6">
+          <h2 className="text-xl font-black text-white">تسجيل الدخول للنظام السحابي</h2>
+          
+          {loginError && (
+            <div className="w-full p-3 bg-red-500/20 border border-red-500/50 text-red-200 text-sm rounded-lg">
+              {loginError}
+            </div>
+          )}
+
+          <form onSubmit={handleEmailLogin} className="w-full flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5 text-right">
+              <label className="text-xs text-zinc-400 font-bold">البريد الإلكتروني</label>
+              <input 
+                type="email" 
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                className="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-left text-sm"
+                dir="ltr"
+                required
+              />
+            </div>
+            
+            <div className="flex flex-col gap-1.5 text-right">
+              <label className="text-xs text-zinc-400 font-bold">كلمة المرور</label>
+              <input 
+                type="password" 
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-left text-sm font-sans tracking-widest"
+                dir="ltr"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3.5 mt-2 bg-yellow-400 hover:bg-yellow-300 text-zinc-950 font-black rounded-xl flex items-center justify-center gap-3 transition-colors shadow-sm"
+            >
+              <LogIn className="w-5 h-5" />
+              <span>تسجيل الدخول</span>
+            </button>
+          </form>
+
+          <div className="w-full flex items-center gap-3 py-2">
+            <div className="h-px bg-zinc-800 flex-1"></div>
+            <span className="text-xs text-zinc-500">أو</span>
+            <div className="h-px bg-zinc-800 flex-1"></div>
+          </div>
+
+          <button
+            onClick={loginWithGoogle}
+            type="button"
+            className="w-full py-3.5 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl flex items-center justify-center gap-3 transition-colors shadow-sm"
+          >
+            <span>تسجيل الدخول باستخدام Google</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoadingReports || !currentReport) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 text-white font-bold gap-3">
+        <AlBaikLogo size="md" />
+        <p className="text-yellow-400 text-sm animate-pulse">جاري تحميل يومياتك من السحابة...</p>
       </div>
     );
   }
@@ -227,11 +364,9 @@ export function App() {
                   الجرد والمصاريف
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-400 font-medium">
-                {currentReport.date} ({currentReport.dayName}) &bull; الكاشير:{' '}
-                <span className="font-bold text-yellow-400">
-                  {currentReport.cashierName || 'كاشير الشفت'}
-                </span>
+              <p className="text-[11px] text-zinc-400 font-medium flex items-center gap-2">
+                <span>{currentReport.date} ({currentReport.dayName}) &bull; الكاشير: <span className="font-bold text-yellow-400">{currentReport.cashierName || 'كاشير الشفت'}</span></span>
+                <span className="text-emerald-400">({user.email})</span>
               </p>
             </div>
           </div>
@@ -290,7 +425,7 @@ export function App() {
               ) : (
                 <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-xl flex items-center gap-1.5 font-bold shadow-2xs">
                   <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                  تم الحفظ تلقائياً ✓
+                  سحابي ✓
                 </span>
               )}
             </div>
@@ -375,6 +510,15 @@ export function App() {
             >
               <PlusCircle className="w-3.5 h-3.5" />
             </button>
+
+            <button
+              type="button"
+              onClick={logout}
+              className="p-2 bg-zinc-900 hover:bg-red-600 text-zinc-400 hover:text-white border border-zinc-700 hover:border-red-500 rounded-xl text-xs font-bold transition-colors"
+              title="تسجيل الخروج"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       </header>
@@ -441,7 +585,7 @@ export function App() {
             <span className="text-yellow-400 font-bold">&bull; مطعم شاورما البيك - يحيى (AL-Baik)</span>
           </div>
           <div className="flex items-center gap-4 text-[11px] font-semibold text-zinc-400">
-            <span>مطابقة فورية للكاش</span>
+            <span>مزامنة سحابية (Firebase) ✓</span>
             <span>تصدير Excel متعدد الصفحات</span>
             <span>تكامل WhatsApp للإدارة</span>
           </div>
@@ -476,3 +620,4 @@ export function App() {
 }
 
 export default App;
+
