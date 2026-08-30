@@ -4,7 +4,7 @@ import { calculateDailySummary } from './utils/calculations';
 import { exportDailyReportToExcel } from './utils/excelExport';
 import { createSampleDailyReport } from './data/initialData';
 import {
-  loadSavedReports,
+  subscribeToReports,
   saveReportLocally,
   deleteReportLocally,
   createNewReport,
@@ -64,7 +64,7 @@ export function App() {
     return () => unsubscribe();
   }, []);
 
-  // Initialize data on mount when user is available
+  // Initialize data on mount when user is available and subscribe to remote changes
   useEffect(() => {
     if (!user) {
       setReports([]);
@@ -72,35 +72,40 @@ export function App() {
       return;
     }
 
-    let isMounted = true;
     setIsLoadingReports(true);
 
-    const initReports = async () => {
-      const saved = await loadSavedReports();
-      if (!isMounted) return;
+    const unsubscribe = subscribeToReports(async (fetchedReports) => {
+      // Find any open report to prevent opening multiple inventories
+      const anyOpen = fetchedReports.find(r => r.status === 'open');
 
-      const todayStr = new Date().toISOString().split('T')[0];
-      const existingToday = saved.find(r => r.date === todayStr);
-
-      if (existingToday) {
-        setReports(saved);
-        setCurrentReport(existingToday);
-      } else if (saved.length > 0) {
-        setReports(saved);
-        setCurrentReport(saved[0]);
-      } else {
+      if (fetchedReports.length === 0) {
+        // No reports exist, create the first one
         const fresh = createNewReport();
         setReports([fresh]);
         setCurrentReport(fresh);
+        setIsLoadingReports(false);
         await saveReportLocally(fresh);
+        return;
       }
-      setIsLoadingReports(false);
-    };
 
-    initReports();
+      setReports(fetchedReports);
+
+      setCurrentReport(prev => {
+        if (!prev) {
+          // On initial load, prioritize an open report. If none open, load the most recent.
+          setIsLoadingReports(false);
+          return anyOpen || fetchedReports[0];
+        } else {
+          // If we already have a current report selected, sync it with the latest data from server
+          const updatedCurrent = fetchedReports.find(r => r.id === prev.id);
+          setIsLoadingReports(false);
+          return updatedCurrent || prev;
+        }
+      });
+    });
 
     return () => {
-      isMounted = false;
+      unsubscribe();
     };
   }, [user]);
 
@@ -135,29 +140,30 @@ export function App() {
     });
   }, []);
 
-  // Switch to a new empty report or open today's existing report (only once per day)
+  // Create a new report only if there are no open reports
   const handleNewReport = async () => {
+    // Check if there is ANY open report
+    const openReport = reports.find(r => r.status === 'open');
+    if (openReport) {
+      setCurrentReport(openReport);
+      alert('يوجد عملية جرد مفتوحة حالياً (لم يتم إغلاقها). يرجى إغلاقها أولاً قبل فتح جرد جديد.');
+      return;
+    }
+
+    // Check if there is already a closed report for today
     const todayStr = new Date().toISOString().split('T')[0];
     const existingToday = reports.find(r => r.date === todayStr);
     if (existingToday) {
       setCurrentReport(existingToday);
-      alert('يوجد بالفعل تقرير مسجل لتاريخ اليوم. لا يمكن فتح أكثر من صفحة لنفس اليوم، وتم فتح التقرير الحالي للتعديل عليه فقط.');
+      alert('يوجد بالفعل تقرير مسجل ومغلق لتاريخ اليوم. لا يمكن فتح أكثر من صفحة لنفس اليوم.');
       return;
     }
+
     const newRep = createNewReport();
     const updatedList = [newRep, ...reports];
     setReports(updatedList);
     setCurrentReport(newRep);
     await saveReportLocally(newRep);
-  };
-
-  // Reload yesterday's real closing data from paper sheet
-  const handleLoadYesterdayRealClosing = async () => {
-    const realReport = createSampleDailyReport();
-    const updatedList = [realReport, ...reports.filter((r) => r.id !== realReport.id)];
-    setReports(updatedList);
-    setCurrentReport(realReport);
-    await saveReportLocally(realReport);
   };
 
   // Delete report
@@ -440,16 +446,6 @@ export function App() {
                 </span>
               )}
             </div>
-
-            <button
-              type="button"
-              onClick={handleLoadYesterdayRealClosing}
-              className="px-2.5 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-zinc-950 font-black rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-all"
-              title="تحميل إغلاق يوم أمس الفعلي المأخوذ من ورقة المطعم"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">إغلاق أمس الفعلي</span>
-            </button>
 
             <button
               type="button"

@@ -1,7 +1,36 @@
 import { DailyReport } from '../types';
 import { createSampleDailyReport, createEmptyDailyReport } from '../data/initialData';
 import { db, auth } from '../firebase';
-import { collection, doc, getDocs, setDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
+import { collection, doc, getDocs, setDoc, deleteDoc, query, orderBy, onSnapshot } from 'firebase/firestore';
+
+export function subscribeToReports(callback: (reports: DailyReport[]) => void): () => void {
+  const user = auth.currentUser;
+  if (!user) {
+    callback([]);
+    return () => {};
+  }
+  
+  const reportsRef = collection(db, 'users', user.uid, 'reports');
+  const q = query(reportsRef);
+  
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    // Only pass it to callback if it's not a purely local write update that doesn't have data yet
+    // Actually, we want to reflect local updates and remote updates. 
+    // If the snapshot has metadata.hasPendingWrites, it's a local write, but it's safe to load.
+    // However, if we're typing, we don't want the snapshot to overwrite our local state if it's identical
+    // or just the local write being echoed back.
+    const reports = snapshot.docs.map(doc => doc.data() as DailyReport);
+    reports.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    // We send an extra flag telling if the change came from the server (another device)
+    const fromServer = !snapshot.metadata.hasPendingWrites;
+    
+    // We only trigger the callback. It's up to the app to decide how to handle it.
+    callback(reports);
+  });
+  
+  return unsubscribe;
+}
 
 export async function loadSavedReports(): Promise<DailyReport[]> {
   const user = auth.currentUser;

@@ -2,26 +2,23 @@ import { DailyReport, ProductionItem, KitchenConsumption } from '../types';
 import { generateDefaultEmployees } from './defaultEmployees';
 
 export const QUICK_PURCHASE_PRESETS = [
-  'ابو المجد',
-  'مسحب',
-  'نوافله',
+  'زعيتر',
   'شعبان',
-  'كينزا',
-  'خبز بروستد',
-  'كيلاني',
-  'الرفاعي',
+  'أبو المجد',
   'فحم',
+  'خبز الشهم',
+  'علام',
+  'ابو خليل',
+  'خبز بروستد',
+  'صينية',
+  'الرفاعي',
+  'نوافلة',
+  'عهدة أبو الوفا',
   'خضار',
-  'خبز',
-  'منظفات',
-  'بيض',
-  'مخلل',
-  'خبز الشيخ',
-  'حبيبه',
-  'غاز',
-  'ابو جليل',
-  'حلاوه',
-  'ثوم'
+  'رفاكو',
+  'كهرباء الزعبي',
+  'عهدة محمد',
+  'عهدة سيف'
 ];
 
 export const QUICK_ADMIN_PRESETS = [
@@ -80,7 +77,8 @@ export const DEFAULT_KITCHEN_CONSUMPTION: KitchenConsumption = {
 
 export function getArabicDayName(dateString: string): string {
   const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-  const date = new Date(dateString);
+  // Append T12:00:00 to avoid timezone offset shifting the day back for people in western hemisphere
+  const date = new Date(dateString + 'T12:00:00');
   return isNaN(date.getDay()) ? 'الإثنين' : days[date.getDay()];
 }
 

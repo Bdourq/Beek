@@ -32,15 +32,23 @@ interface PaperReplicaViewProps {
 
 // Common fast purchase item presets for quick insertion
 const COMMON_PURCHASE_PRESETS = [
+  { name: 'زعيتر', amount: 0 },
+  { name: 'شعبان', amount: 0 },
+  { name: 'أبو المجد', amount: 0 },
+  { name: 'فحم', amount: 0 },
+  { name: 'خبز الشهم', amount: 0 },
+  { name: 'علام', amount: 0 },
+  { name: 'ابو خليل', amount: 0 },
+  { name: 'خبز بروستد', amount: 0 },
+  { name: 'صينية', amount: 0 },
+  { name: 'الرفاعي', amount: 0 },
+  { name: 'نوافلة', amount: 0 },
+  { name: 'عهدة أبو الوفا', amount: 0 },
   { name: 'خضار', amount: 0 },
-  { name: 'بيض', amount: 0 },
-  { name: 'غاز', amount: 9.0 },
-  { name: 'خبز', amount: 0 },
-  { name: 'كولا', amount: 0 },
-  { name: 'قهوة وسكر', amount: 0 },
-  { name: 'رول كاش', amount: 2.0 },
-  { name: 'منظفات', amount: 0 },
-  { name: 'مخللات', amount: 0 }
+  { name: 'رفاكو', amount: 0 },
+  { name: 'كهرباء الزعبي', amount: 0 },
+  { name: 'عهدة محمد', amount: 0 },
+  { name: 'عهدة سيف', amount: 0 }
 ];
 
 export const PaperReplicaView: React.FC<PaperReplicaViewProps> = ({
