@@ -19,7 +19,7 @@ import { EmployeesModal } from './components/EmployeesModal';
 import { ShareModal } from './components/ShareModal';
 import { HistoryModal } from './components/HistoryModal';
 import { AlBaikLogo } from './components/AlBaikLogo';
-import { auth, loginWithGoogle, logout } from './firebase';
+import { auth, loginWithGoogle, logout, loginWithEmail, registerWithEmail } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import {
   FileSpreadsheet,
@@ -235,13 +235,24 @@ export function App() {
     window.print();
   };
 
+  const handleGoogleLogin = async () => {
+    setLoginError('');
+    try {
+      await loginWithGoogle();
+    } catch (err: any) {
+      if (err.code === 'auth/popup-closed-by-user') {
+        setLoginError('تم إغلاق نافذة تسجيل الدخول.');
+      } else {
+        setLoginError('فشل تسجيل الدخول عبر Google: ' + err.message);
+      }
+    }
+  };
+
   // Add login with email handler
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
     try {
-      // Import these functions at the top of the file
-      const { loginWithEmail, registerWithEmail } = await import('./firebase');
       try {
         await loginWithEmail(loginEmail, loginPassword);
       } catch (err: any) {
@@ -324,7 +335,7 @@ export function App() {
           </div>
 
           <button
-            onClick={loginWithGoogle}
+            onClick={handleGoogleLogin}
             type="button"
             className="w-full py-3.5 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl flex items-center justify-center gap-3 transition-colors shadow-sm"
           >
